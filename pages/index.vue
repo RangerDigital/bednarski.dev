@@ -8,7 +8,7 @@
         Tailwind, Nest.js, Fastify.js, Vue.js, DevOps and Open Source software.</p
       >
 
-      <BaseButton @click="contactMe">Get in Touch with me</BaseButton>
+      <!-- <BaseButton @click="contactMe">Get in Touch with me</BaseButton> -->
     </div>
     <div class="flex flex-row flex-wrap xl:flex-col gap-4">
       <BaseTag>
