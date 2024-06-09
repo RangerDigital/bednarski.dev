@@ -1,14 +1,13 @@
 <template>
   <section class="w-screen h-screen flex flex-row items-center justify-center overflow-hidden absolute bg-dark z-10" id="intro-loader">
-    <section class="grid grid-cols-1 grid-rows-1 scale-50 xl:scale-100">
-      <div class="flex flex-row gap-8 items-center col-start-1 row-start-1 z-10 justify-center"> </div>
+    <section class="grid grid-cols-1 grid-rows-1">
+      <div class="flex flex-row gap-8 items-center col-start-1 row-start-1"> </div>
 
+      <!-- Slot Machine -->
       <div class="flex flex-row gap-8 items-center col-start-1 row-start-1">
-        <div class="overflow-hidden h-48 w-48 intro-slot" id="intro-slot-1"> </div>
-
-        <div class="overflow-hidden h-48 w-48 intro-slot" id="intro-slot-2"> </div>
-
-        <div class="overflow-hidden h-48 w-48 intro-slot" id="intro-slot-3"> </div>
+        <div class="overflow-hidden h-20 w-20 lg:h-48 lg:w-48 intro-slot"> </div>
+        <div class="overflow-hidden h-20 w-20 lg:h-48 lg:w-48 intro-slot"> </div>
+        <div class="overflow-hidden h-20 w-20 lg:h-48 lg:w-48 intro-slot"> </div>
       </div>
     </section>
   </section>
@@ -23,36 +22,29 @@
 
     methods: {
       startAnimation() {
-        // Slot Machine Effect
-
         anime({
-          targets: '#intro-slot-1',
-          delay: 0,
-          backgroundPosition: '0 380%',
-          duration: 1200,
-          easing: 'easeInOutSine',
+          targets: '.intro-slot',
+          delay: anime.stagger(200),
+          backgroundPosition: '0 400%',
+          filter: ['blur(0px)', 'blur(1px)', 'blur(0px)'],
+          duration: 1000,
+          easing: 'easeInOutQuart',
         });
 
         anime({
-          targets: '#intro-slot-2',
-          delay: 100,
-          backgroundPosition: '0 190%',
-          duration: 1200,
-          easing: 'easeInOutSine',
-        });
-
-        anime({
-          targets: '#intro-slot-3',
-          delay: 200,
-          backgroundPosition: '0 380%',
-          duration: 1200,
+          targets: '.intro-slot',
+          delay: 1800,
+          opacity: 0,
+          translateY: 50,
+          duration: 200,
+          filter: ['blur(0px)', 'blur(1px)'],
           easing: 'easeInOutSine',
         });
 
         anime({
           targets: '#intro-loader',
           opacity: 0,
-          duration: 200,
+          duration: 300,
           delay: 2000,
           easing: 'easeOutSine',
           complete: () => {
@@ -72,5 +64,6 @@
   .intro-slot {
     background: url('~/assets/icons/loader-slot.svg');
     background-repeat: repeat-y;
+    background-size: cover;
   }
 </style>
