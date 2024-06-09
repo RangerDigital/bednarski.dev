@@ -1,11 +1,11 @@
 <template>
-  <section class="flex-col xl:flex-row flex justify-between w-full gap-4">
+  <section class="flex-col xl:flex-row flex justify-between w-full gap-4 h-full">
     <div class="flex flex-col gap-6">
       <h1 class="text-5xl xl:text-9xl font-semibold font-headings">Jakub Bednarski<span class="text-primary text-2xl xl:text-6xl">.dev</span></h1>
 
       <p class="text-base xl:text-lg max-w-prose"
-        ><span class="text-primary">Full-Stack Design Engineer</span> who loves building and breaking visually pleasing web apps and internet of things products. Fan of anime,
-        Tailwind, Nest.js, Fastify.js, Vue.js, DevOps and Open Source software.</p
+        ><span class="text-primary underline underline-offset-8">Full-Stack Design Engineer</span> who loves building and breaking visually pleasing web apps and internet of things
+        products. Fan of anime, Tailwind, Nest.js, Fastify.js, Vue.js, DevOps and Open Source software.</p
       >
 
       <!-- <BaseButton @click="contactMe">Get in Touch with me</BaseButton> -->

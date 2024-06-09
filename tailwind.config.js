@@ -10,9 +10,9 @@ export default {
       colors: {
         primary: '#ff344a',
 
-        white: '#f6f6f6',
+        white: '#ededed',
         dark: {
-          DEFAULT: '#0A0A0A',
+          DEFAULT: '#070707',
           light: '#141315',
           lighter: '#2c2b2d',
         },
