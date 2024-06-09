@@ -1,75 +1,16 @@
-# Nuxt 3 Minimal Starter
 
-Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+---
 
-## Setup
+Source code of the third iteration of my personal site. Build using **Vue.js**, **Nuxt.js**, and **Tailwind.CSS**.
 
-Make sure to install the dependencies:
+<br>
 
-```bash
-# npm
-npm install
+> 💖 Got your attention? Great, Check it out live [here!](https://bednarski.dev/)
 
-# pnpm
-pnpm install
+<br>
 
-# yarn
-yarn install
+## 🚧 Contributing
 
-# bun
-bun install
-```
+**You are more than welcome to help me improve this site!**
 
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm run dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
-```
-
-## Production
-
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm run build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm run preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+Just fork this project from the `master` branch and submit a Pull Request (PR).
