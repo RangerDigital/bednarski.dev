@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
   useHead({
-    title: 'Jakub Bednarski | Desig Software Engineer',
+    title: 'Jakub Bednarski | Design Software Engineer',
     link: [{ rel: 'icon', type: 'image/png', href: '/favicon.png' }],
     meta: [
       {
