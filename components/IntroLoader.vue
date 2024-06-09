@@ -14,7 +14,7 @@
       </div>
 
       <!-- Slot Machine -->
-      <div class="flex flex-row gap-8 items-center col-start-1 row-start-1 p-16">
+      <div class="flex flex-row gap-8 items-center col-start-1 row-start-1 p-4 py-8 xl:p-16">
         <div class="overflow-hidden h-20 w-20 lg:h-48 lg:w-48 intro-slot"> </div>
         <div class="overflow-hidden h-20 w-20 lg:h-48 lg:w-48 intro-slot"> </div>
         <div class="overflow-hidden h-20 w-20 lg:h-48 lg:w-48 intro-slot"> </div>
