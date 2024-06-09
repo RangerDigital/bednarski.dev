@@ -12,7 +12,7 @@ export default {
 
         white: '#f6f6f6',
         dark: {
-          DEFAULT: '#0c0c0c',
+          DEFAULT: '#0A0A0A',
           light: '#141315',
           lighter: '#2c2b2d',
         },

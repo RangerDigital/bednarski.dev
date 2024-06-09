@@ -1,10 +1,20 @@
 <template>
   <section class="w-screen h-screen flex flex-row items-center justify-center overflow-hidden absolute bg-dark z-10" id="intro-loader">
     <section class="grid grid-cols-1 grid-rows-1">
-      <div class="flex flex-row gap-8 items-center col-start-1 row-start-1"> </div>
+      <div class="flex flex-col justify-between gap-8 col-start-1 row-start-1 text-white text-2xl">
+        <div class="flex flex-row justify-between">
+          <p class="intro-cross opacity-0">+</p>
+          <p class="intro-cross opacity-0">+</p>
+        </div>
+
+        <div class="flex flex-row justify-between">
+          <p class="intro-cross opacity-0">+</p>
+          <p class="intro-cross opacity-0">+</p>
+        </div>
+      </div>
 
       <!-- Slot Machine -->
-      <div class="flex flex-row gap-8 items-center col-start-1 row-start-1">
+      <div class="flex flex-row gap-8 items-center col-start-1 row-start-1 p-16">
         <div class="overflow-hidden h-20 w-20 lg:h-48 lg:w-48 intro-slot"> </div>
         <div class="overflow-hidden h-20 w-20 lg:h-48 lg:w-48 intro-slot"> </div>
         <div class="overflow-hidden h-20 w-20 lg:h-48 lg:w-48 intro-slot"> </div>
@@ -25,10 +35,19 @@
         anime({
           targets: '.intro-slot',
           delay: anime.stagger(200),
-          backgroundPosition: '0 400%',
+          backgroundPosition: '0 700%',
           filter: ['blur(0px)', 'blur(1px)', 'blur(0px)'],
           duration: 1000,
           easing: 'easeInOutQuart',
+        });
+
+        anime({
+          targets: '.intro-cross',
+          delay: anime.stagger(200),
+          opacity: [0, 1],
+          translateY: [-20, 0],
+          duration: 200,
+          easing: 'easeInOutSine',
         });
 
         anime({
