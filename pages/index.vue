@@ -103,17 +103,14 @@
   </section>
 
   <section class="my-12 flex flex-col flex-nowrap">
-    <BaseHeader subtitle="Location Section">Rzeszów, Poland </BaseHeader>
+    <BaseHeader subtitle="Content Section">Articles</BaseHeader>
 
     <div class="flex flex-row flex-wrap gap-2 xl:gap-4 justify-center mt-6">
-      <div
-        class="flex flex-row justify-center items-center aspect-video max-w-2xl w-full h-full shadow-inner-white border border-dark-lighter rounded-lg bg-[url('/assets/img/rzeszow-map.png')] bg-cover bg-center"
-      >
-      </div>
+      <BaseTag class="cursor-pointer" @click="$router.push(article._path)" v-for="article in articles" :key="article._id"> {{ article.title }} ({{ article._path }})</BaseTag>
     </div>
 
     <div class="flex flex-row flex-wrap gap-4 justify-center mt-6">
-      <p class="max-w-prose text-center"> I am based in Rzeszów, Poland, which is in the Central European Time Zone GMT+1. <DistanceString /></p>
+      <p class="max-w-prose text-center"> I write articles on various topics, including web development, design, and technology. </p>
     </div>
   </section>
 
@@ -152,8 +149,19 @@
   </section>
 </template>
 
-<script setup>
-  const contactMe = () => {
-    window.open('mailto:jakub@bednarski.dev');
-  };
+<script>
+  import { defineComponent } from 'vue';
+
+  export default defineComponent({
+    name: 'Home',
+    data() {
+      return {
+        articles: [],
+      };
+    },
+
+    async mounted() {
+      this.articles = await queryContent('blog').find();
+    },
+  });
 </script>
