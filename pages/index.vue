@@ -11,11 +11,6 @@
       <!-- <BaseButton @click="contactMe">Get in Touch with me</BaseButton> -->
     </div>
 
-    <div class="w-full h-[60rem] flex flex-col items-end scale-110">
-      <iframe src="https://my.spline.design/miniroomartcopy-c6177a4ff204127003a8b23ffc782179/" frameborder="0" width="100%" height="100%"></iframe>
-      <div class="w-48 h-16 bg-dark -translate-y-14"></div>
-    </div>
-
     <div class="flex flex-row flex-wrap xl:flex-col gap-4">
       <BaseTag>
         <svg width="18" height="17" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">

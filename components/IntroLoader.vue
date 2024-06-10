@@ -1,5 +1,5 @@
 <template>
-  <section class="w-screen h-screen flex flex-row items-center justify-center overflow-hidden absolute bg-dark z-10" id="intro-loader">
+  <section class="w-screen h-screen flex flex-row items-center justify-center overflow-hidden absolute bg-dark z-10" id="intro-loader" @click="$emit('animation-complete')">
     <section class="grid grid-cols-1 grid-rows-1">
       <div class="flex flex-col justify-between gap-8 col-start-1 row-start-1 text-white text-2xl">
         <div class="flex flex-row justify-between">
