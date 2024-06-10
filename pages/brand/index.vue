@@ -20,5 +20,7 @@
 
     <!-- Logo -->
     <p>Branding</p>
+
+    <TiltWidget />
   </section>
 </template>
