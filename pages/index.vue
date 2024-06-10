@@ -1,9 +1,9 @@
 <template>
-  <section class="flex-col xl:flex-row flex justify-between w-full gap-4 h-full">
+  <section class="flex-col xl:flex-row flex justify-between w-full gap-4 h-full flex-nowrap">
     <div class="flex flex-col gap-6">
       <h1 class="text-5xl xl:text-9xl font-semibold font-headings">Jakub Bednarski<span class="text-primary text-2xl xl:text-6xl">.dev</span></h1>
 
-      <p class="text-base xl:text-lg max-w-prose"
+      <p class="max-w-prose"
         ><span class="text-primary underline underline-offset-4">Full-Stack Design Engineer</span> who loves building and breaking visually pleasing web apps and internet of things
         products. Fan of anime, Tailwind, Nest.js, Fastify.js, Vue.js, DevOps and Open Source software.</p
       >
@@ -22,7 +22,7 @@
           ></path>
         </svg>
 
-        <p>Rzeszów, Poland <span class="text-xs">(GMT+1)</span> <DistanceString class="text-xs" /></p>
+        <p>Rzeszów, Poland <span class="text-xs">(GMT+1)</span> </p>
       </BaseTag>
 
       <BaseTag>
@@ -75,6 +75,45 @@
         </svg>
         <p>Share</p>
       </BaseTag>
+    </div>
+  </section>
+
+  <section class="my-12 flex flex-col flex-nowrap">
+    <BaseHeader subtitle="Tools Section">Tools & Software</BaseHeader>
+
+    <div class="flex flex-row flex-wrap gap-2 xl:gap-4 justify-center mt-6">
+      <BaseTag> Vue.js</BaseTag>
+      <BaseTag> Nuxt.js</BaseTag>
+      <BaseTag> Tailwind CSS</BaseTag>
+      <BaseTag> TypeScript</BaseTag>
+      <BaseTag> Nest.js</BaseTag>
+      <BaseTag> Fastify.js</BaseTag>
+      <BaseTag> Docker</BaseTag>
+      <BaseTag> GitHub</BaseTag>
+      <BaseTag> GitHub Actions</BaseTag>
+
+      <BaseTag> GitHub Copilot</BaseTag>
+      <BaseTag> VSCode</BaseTag>
+      <BaseTag> Figma</BaseTag>
+    </div>
+
+    <div class="flex flex-row flex-wrap gap-4 justify-center mt-6">
+      <p class="max-w-prose text-center"> I continually explore and adopt new tools and software to enhance my project development and workflow efficiency.</p>
+    </div>
+  </section>
+
+  <section class="my-12 flex flex-col flex-nowrap">
+    <BaseHeader subtitle="Location Section">Rzeszów, Poland </BaseHeader>
+
+    <div class="flex flex-row flex-wrap gap-2 xl:gap-4 justify-center mt-6">
+      <div
+        class="flex flex-row justify-center items-center aspect-video max-w-2xl w-full h-full shadow-inner-white border border-dark-lighter rounded-lg bg-[url('/assets/img/rzeszow-map.png')] bg-cover bg-center"
+      >
+      </div>
+    </div>
+
+    <div class="flex flex-row flex-wrap gap-4 justify-center mt-6">
+      <p class="max-w-prose text-center"> I am based in Rzeszów, Poland, which is in the Central European Time Zone GMT+1. <DistanceString /></p>
     </div>
   </section>
 
