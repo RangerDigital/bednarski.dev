@@ -1,5 +1,5 @@
 <template>
-  <section class="flex flex-col gap-4 items-center">
+  <section class="flex flex-col gap-4 items-center transition-all duration-300 ease-in-out" :class="{ 'rotate-180 ': isFlipped }">
     <ShareQRIcon class="w-full max-w-xl pb-4 border-b border-dark-lighter border-dashed" />
 
     <div class="flex flex-row flex-wrap xl:flex-col gap-4">
@@ -70,6 +70,32 @@
       </BaseTag>
     </div>
   </section>
+
+  <section class="flex flex-row justify-end">
+    <button
+      @click="flipView"
+      :class="{ 'animate-spin': isFlipped }"
+      class="p-4 flex flex-row gap-3 w-min sflex-shrink-0 whitespace-nowrap shadow-inner-white flex-nowrap items-center bg-dark-light border border-dark-lighter rounded-full text-sm"
+      ><svg width="24px" height="24px" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor">
+        <path
+          d="M21.1679 8C19.6247 4.46819 16.1006 2 11.9999 2C6.81459 2 2.55104 5.94668 2.04932 11"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        ></path>
+        <path d="M17 8H21.4C21.7314 8 22 7.73137 22 7.4V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+        <path
+          d="M2.88146 16C4.42458 19.5318 7.94874 22 12.0494 22C17.2347 22 21.4983 18.0533 22 13"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        ></path>
+        <path d="M7.04932 16H2.64932C2.31795 16 2.04932 16.2686 2.04932 16.6V21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+    </button>
+  </section>
 </template>
 
 <script>
@@ -80,6 +106,17 @@
     name: 'Share',
     components: {
       ShareQRIcon,
+    },
+    data() {
+      return {
+        isFlipped: false,
+      };
+    },
+
+    methods: {
+      flipView() {
+        this.isFlipped = !this.isFlipped;
+      },
     },
   });
 </script>
