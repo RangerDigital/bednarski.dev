@@ -71,7 +71,7 @@
     </div>
   </section>
 
-  <section class="flex flex-row justify-end">
+  <section class="fixed bottom-10 right-0 p-4">
     <button
       @click="flipView"
       :class="{ 'animate-spin': isFlipped }"
@@ -116,6 +116,26 @@
     methods: {
       flipView() {
         this.isFlipped = !this.isFlipped;
+
+        // open full screen
+        if (this.isFlipped) {
+          document.documentElement.requestFullscreen();
+        } else {
+          document.exitFullscreen();
+        }
+
+        // Scroll Down
+        if (this.isFlipped) {
+          window.scrollTo({
+            top: document.body.scrollHeight,
+            behavior: 'smooth',
+          });
+        } else {
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth',
+          });
+        }
       },
     },
   });
