@@ -15,7 +15,7 @@ export default defineNuxtConfig({
     '/github': { redirect: { to: 'https://github.com/RangerDigital', statusCode: 301 } },
   },
 
-  modules: ['nuxt-svgo', '@nuxtjs/sitemap', '@nuxt/content'],
+  modules: ['nuxt-svgo', '@nuxtjs/sitemap', '@nuxt/content', "nuxt-simple-robots"],
   svgo: {
     defaultImport: 'component',
   },
