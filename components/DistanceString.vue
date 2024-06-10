@@ -28,7 +28,12 @@
         const ip = await this.fetchUserIP();
         if (ip) {
           try {
-            const response = await fetch(`http://ip-api.com/json/${ip}`);
+            const response = await fetch(`http://ip-api.com/json/${ip}`, {
+              headers: {
+                'Content-Type': 'application/json',
+                Origin: window.location.origin,
+              },
+            });
             if (!response.ok) throw new Error('Network response was not ok.');
             this.userLocation = await response.json();
             this.calculateDistance();
