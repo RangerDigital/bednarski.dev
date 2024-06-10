@@ -1,3 +1,4 @@
+import getRoutes from "./utils/getRoutes";
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
@@ -15,11 +16,17 @@ export default defineNuxtConfig({
     '/github': { redirect: { to: 'https://github.com/RangerDigital', statusCode: 301 } },
   },
 
-  modules: ['nuxt-svgo', '@nuxtjs/sitemap', '@nuxt/content', "nuxt-simple-robots"],
+  modules: ['nuxt-svgo', '@nuxtjs/sitemap', '@nuxt/content', 'nuxt-simple-robots'],
   svgo: {
     defaultImport: 'component',
   },
+  sitemap: {
+    routes() {
+      return getRoutes();
+    },
+  },
   content: {
+    documentDriven: true,
     highlight: {
       theme: 'github-dark',
     },
