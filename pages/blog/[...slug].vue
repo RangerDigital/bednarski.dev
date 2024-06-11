@@ -1,65 +1,65 @@
 <template>
   <section class="flex flex-col justify-center items-center">
     <div class="max-w-2xl w-full">
-      <ContentDoc class="flex flex-col gap-3" />
+      <ContentDoc class="flex flex-col gap-3 markdown" />
     </div>
   </section>
 </template>
 
 <style>
-  h1 {
+  .markdown h1 {
     @apply text-4xl font-semibold font-headings;
   }
 
-  h2 {
+  .markdown h2 {
     @apply text-2xl font-semibold font-headings;
   }
 
-  h3 {
+  .markdown h3 {
     @apply text-xl font-semibold font-headings;
   }
 
-  h4 {
+  .markdown h4 {
     @apply text-lg font-semibold font-headings;
   }
 
-  h5 {
+  .markdown h5 {
     @apply text-base font-semibold font-headings;
   }
 
-  h6 {
+  .markdown h6 {
     @apply text-sm font-semibold font-headings;
   }
 
-  p {
+  .markdown p {
     @apply text-base;
   }
 
-  ul {
+  .markdown ul {
     @apply list-disc list-inside;
   }
 
-  ol {
+  .markdown ol {
     @apply list-decimal list-inside;
   }
 
-  li {
+  .markdown li {
     @apply text-base;
   }
 
-  blockquote {
+  .markdown blockquote {
     @apply border-l-4 border-gray-300 pl-4;
   }
 
-  pre {
+  .markdown pre {
     @apply bg-dark-light p-4 rounded-md;
   }
 
-  code {
+  .markdown code {
     @apply font-mono text-sm;
   }
 
-  table {
+  .markdown table {
     @apply w-full border-collapse;
   }
 </style>
