@@ -1,3 +1,12 @@
+---
+title: Fresh Site Just Dropped!
+description: I’m thrilled to announce the launch of my website!
+date: 2024-07-01
+tags:
+  - Announcement
+  - Website
+---
+
 # Fresh Site Just Dropped!
 
 I’m thrilled to announce the launch of my website!

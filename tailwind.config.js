@@ -7,6 +7,41 @@ export default {
         sans: ['Work Sans', 'sans-serif'],
         headings: ['Poppins', 'sans-serif'],
       },
+
+      blur: {
+        xs: '3px',
+      },
+
+      // animate reveal from right to left with opacity
+
+      keyframes: {
+        'fade-in-right': {
+          '0%': {
+            opacity: '0',
+            transform: 'translateX(1rem)',
+          },
+          '100%': {
+            opacity: '1',
+            transform: 'translateX(0)',
+          },
+        },
+        'fade-out-right': {
+          '0%': {
+            opacity: '1',
+            transform: 'translateX(0)',
+          },
+          '100%': {
+            opacity: '0',
+            transform: 'translateX(-1rem)',
+          },
+        },
+      },
+
+      animation: {
+        'fade-in-right': 'fade-in-right 0.25s ease-in-out',
+        'fade-out-right': 'fade-out-right 0.25s ease-in-out forwards',
+      },
+    
       colors: {
         primary: '#ff344a',
 
