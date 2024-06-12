@@ -56,7 +56,7 @@
   }
 
   .markdown pre {
-    @apply bg-dark-light p-4 rounded-md;
+    @apply bg-dark-light p-4 rounded;
   }
 
   .markdown code {
@@ -65,5 +65,9 @@
 
   .markdown table {
     @apply w-full border-collapse;
+  }
+
+  .markdown img {
+    @apply w-full rounded shadow-inner border border-dark-lighter;
   }
 </style>

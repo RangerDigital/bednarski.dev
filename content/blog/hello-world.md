@@ -11,6 +11,8 @@ tags:
 
 This is my first blog post!
 
-```
+![porsche](/img/porsche.jpg)
+
+```js
 console.log('Hello, World!');
 ```
