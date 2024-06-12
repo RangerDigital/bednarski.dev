@@ -102,6 +102,30 @@
     </div>
   </section>
 
+  <section class="my-12 flex flex-col flex-nowrap">
+    <BaseHeader subtitle="Experience Section">My Clients</BaseHeader>
+
+    <div class="flex flex-row flex-wrap gap-2 xl:gap-4 justify-center mt-6">
+      <BaseTag> Vue.js</BaseTag>
+      <BaseTag> Nuxt.js</BaseTag>
+      <BaseTag> Tailwind CSS</BaseTag>
+      <BaseTag> TypeScript</BaseTag>
+      <BaseTag> Nest.js</BaseTag>
+      <BaseTag> Fastify.js</BaseTag>
+      <BaseTag> Docker</BaseTag>
+      <BaseTag> GitHub</BaseTag>
+      <BaseTag> GitHub Actions</BaseTag>
+
+      <BaseTag> GitHub Copilot</BaseTag>
+      <BaseTag> VSCode</BaseTag>
+      <BaseTag> Figma</BaseTag>
+    </div>
+
+    <div class="flex flex-row flex-wrap gap-4 justify-center mt-6">
+      <p class="max-w-prose text-center"> I continually explore and adopt new tools and software to enhance my project development and workflow efficiency.</p>
+    </div>
+  </section>
+
   <section class="my-12 flex flex-col flex-nowrap items-center">
     <BaseHeader subtitle="Content Section">Articles</BaseHeader>
 
@@ -132,6 +156,7 @@
 
       <BlogCard :title="activeArticle._path">
         <MarkdownContentRendered
+          :disableInteractivity="true"
           @click="$router.push(activeArticle._path)"
           :class="{ 'blur-md': runAnimation }"
           class="p-4 scale-75 -translate-y-6 h-full w-full blur-xs hover:blur-none transition-all transform-gpu duration-200 ease-in-out"

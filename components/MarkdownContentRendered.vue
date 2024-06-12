@@ -1,5 +1,5 @@
 <template>
-  <ContentDoc class="flex flex-col gap-3 markdown" />
+  <ContentDoc class="flex flex-col gap-3 markdown" :class="{ 'no-hover': disableInteractivity }" />
 </template>
 
 <script>
@@ -7,6 +7,13 @@
 
   export default defineComponent({
     name: 'MarkdownContentRendered',
+
+    props: {
+      disableInteractivity: {
+        type: Boolean,
+        default: false,
+      },
+    },
   });
 </script>
 
@@ -68,6 +75,10 @@
   }
 
   .markdown img {
-    @apply w-full rounded shadow-inner border border-dark-lighter xl:hover:scale-125 xl:cursor-pointer transition-transform duration-150 ease-in-out hover:shadow-2xl;
+    @apply w-full rounded shadow-inner border border-dark-lighter xl:cursor-pointer transition-transform duration-150 ease-in-out xl:hover:scale-125;
+  }
+
+  .no-hover img {
+    @apply xl:hover:scale-100;
   }
 </style>
