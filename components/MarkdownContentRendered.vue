@@ -68,6 +68,6 @@
   }
 
   .markdown img {
-    @apply w-full rounded shadow-inner border border-dark-lighter;
+    @apply w-full rounded shadow-inner border border-dark-lighter xl:hover:scale-125 xl:cursor-pointer transition-transform duration-150 ease-in-out hover:shadow-2xl;
   }
 </style>

@@ -105,7 +105,12 @@
   <section class="my-12 flex flex-col flex-nowrap items-center">
     <BaseHeader subtitle="Content Section">Articles</BaseHeader>
 
-    <div class="flex flex-col xl:flex-row gap-8 xl:gap-28 justify-center mt-8 flex-nowrap w-full" v-if="activeArticle">
+    <div
+      class="flex flex-col xl:flex-row gap-8 xl:gap-28 justify-center mt-8 flex-nowrap w-full"
+      v-if="activeArticle"
+      @mouseenter="pauseArticleInterval = true"
+      @mouseleave="pauseArticleInterval = false"
+    >
       <div class="flex flex-col w-full xl:w-96 xl:ml-64 items-center xl:items-start">
         <div class="flex flex-row gap-2 items-center border-b pb-6 border-dark-light w-full justify-center xl:justify-start">
           <div class="rounded-full bg-dark-light w-8 h-1 transition-all duration-100 ease-in-out" :class="{ 'bg-dark-lighter !w-14': activeArticleIndex === 0 }"></div>
@@ -193,6 +198,8 @@
       this.articles = await queryContent('blog').find();
 
       setInterval(() => {
+        if (this.pauseArticleInterval) return;
+
         this.runAnimation = true;
 
         setTimeout(() => {
