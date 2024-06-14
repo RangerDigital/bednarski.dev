@@ -43,7 +43,7 @@ export default {
       },
     
       colors: {
-        primary: '#ff344a',
+        primary: '#FF283F',
 
         white: '#ededed',
         dark: {
