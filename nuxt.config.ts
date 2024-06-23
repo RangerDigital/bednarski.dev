@@ -1,4 +1,4 @@
-import getRoutes from "./utils/getRoutes";
+import getRoutes from './utils/getRoutes';
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
@@ -25,8 +25,22 @@ export default defineNuxtConfig({
       return getRoutes();
     },
   },
+
+  head: {
+    title: 'Jakub Bednarski | Full-Stack Design Engineer',
+    meta: [
+      { charset: 'utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      {
+        hid: 'description',
+        name: 'description',
+        content: 'Jakub Bednarski is a Full-Stack Design Engineer based in Rzeszów, Poland.',
+      },
+    ],
+  },
   content: {
     documentDriven: true,
+    contentHead: false,
     highlight: {
       theme: 'github-dark',
     },
