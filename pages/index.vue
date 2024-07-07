@@ -1,188 +1,13 @@
 <template>
-  <section class="flex-col xl:flex-row flex justify-between w-full gap-4 h-full flex-nowrap">
-    <div class="flex flex-col gap-6">
-      <h1 class="text-5xl xl:text-9xl font-semibold font-headings">Jakub Bednarski<span class="text-primary text-2xl xl:text-6xl">.dev</span></h1>
+  <HeroSection />
 
-      <p class="max-w-prose"
-        ><span class="text-primary underline underline-offset-4">Full-Stack Design Engineer</span> who loves building and breaking visually pleasing web apps and internet of things
-        products. Fan of anime, Tailwind, Nest.js, Fastify.js, Vue.js, DevOps and Open Source software.</p
-      >
+  <ToolsSection />
 
-      <!-- <BaseButton @click="contactMe">Get in Touch with me</BaseButton> -->
-    </div>
+  <ArticlesSection />
 
-    <div class="flex flex-row flex-wrap xl:flex-col gap-4">
-      <BaseTag>
-        <svg width="18" height="17" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path
-            fill-rule="evenodd"
-            clip-rule="evenodd"
-            d="M5.76023 1.65814C5.90442 1.6027 6.06212 1.59312 6.21193 1.63069L14.0068 3.58574L17.6583 2.18184C17.6719 2.17659 17.6856 2.17134 17.6992 2.16608C17.9723 2.06101 18.2495 1.95432 18.4864 1.9013C18.7508 1.84211 19.1366 1.8084 19.4986 2.05812C19.8605 2.30785 19.9672 2.68134 20.0068 2.95022C20.0422 3.19109 20.0421 3.489 20.042 3.78237C20.042 3.79706 20.042 3.76772 20.042 3.78237L20.042 14.038C20.042 14.0463 20.042 14.0547 20.042 14.0632C20.042 14.2047 20.0421 14.3649 20.0268 14.5048C20.0087 14.6716 19.9635 14.8771 19.8286 15.0784C19.6936 15.2797 19.521 15.3992 19.3738 15.479C19.2504 15.5459 19.1024 15.6063 18.9718 15.6596L14.3383 17.5524C14.1903 17.6129 14.027 17.6245 13.8721 17.5856L6.07715 15.6306L2.4257 17.0345C2.41206 17.0397 2.39839 17.045 2.38472 17.0502C2.1117 17.1553 1.83445 17.262 1.5976 17.315C1.33319 17.3742 0.947377 17.4079 0.585416 17.1582C0.223455 16.9085 0.116764 16.535 0.077233 16.2661C0.0418216 16.0252 0.041912 15.7273 0.0420011 15.4339C0.0420056 15.4193 0.0420101 15.4046 0.0420101 15.3899V5.0678C0.0420101 5.0593 0.0420067 5.05072 0.0420033 5.04208C0.0419458 4.89754 0.0418808 4.7342 0.0576317 4.59172C0.0763949 4.422 0.123077 4.21269 0.262736 4.00895C0.402395 3.8052 0.58051 3.68656 0.731763 3.60825C0.858733 3.54251 1.01079 3.48412 1.14534 3.43245C1.15339 3.42936 1.16137 3.42629 1.16928 3.42325L5.76023 1.65814ZM6.78181 14.2513L13.3022 15.8866V4.96505L6.78181 3.32966V14.2513ZM5.27711 3.46053V14.3215L1.88724 15.6249C1.7543 15.676 1.64449 15.7181 1.54861 15.753C1.54675 15.6507 1.54671 15.5327 1.54671 15.3899V5.0678C1.54671 4.99838 1.54673 4.94298 1.54736 4.89523C1.59158 4.87756 1.64313 4.85771 1.70775 4.83287L5.27711 3.46053ZM14.8069 4.89478V15.7311L18.3811 14.271C18.4438 14.2454 18.4938 14.2249 18.5367 14.2067C18.5373 14.1601 18.5373 14.1059 18.5373 14.038V3.82639C18.5373 3.68356 18.5372 3.5656 18.5354 3.4633C18.4395 3.49817 18.3297 3.54034 18.1967 3.59145L14.8069 4.89478Z"
-            fill="currentColor"
-          ></path>
-        </svg>
-
-        <p>Rzeszów, Poland <span class="text-xs">(GMT+1)</span> </p>
-      </BaseTag>
-
-      <BaseTag>
-        <svg width="18" height="17" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path
-            fill-rule="evenodd"
-            clip-rule="evenodd"
-            d="M4.53631 6.9273C4.75393 6.57142 5.22436 6.45603 5.58705 6.66955L5.9644 6.89171C7.12942 7.57759 7.9551 8.06265 8.64697 8.38181C9.32314 8.69372 9.81444 8.819 10.2987 8.819C10.783 8.819 11.2743 8.69373 11.9504 8.38181C12.6423 8.06265 13.468 7.57759 14.633 6.89171L15.0103 6.66955C15.373 6.45603 15.8435 6.57142 16.0611 6.9273C16.2787 7.28318 16.1611 7.74477 15.7984 7.9583L15.3861 8.20104C14.2639 8.86172 13.3723 9.38664 12.6021 9.74193C11.8082 10.1081 11.0872 10.3219 10.2987 10.3219C9.51018 10.3219 8.78917 10.1081 7.9953 9.74193C7.22511 9.38664 6.33352 8.86173 5.21131 8.20104L4.799 7.9583C4.43631 7.74477 4.3187 7.28318 4.53631 6.9273Z"
-            fill="currentColor"
-          ></path>
-          <path
-            fill-rule="evenodd"
-            clip-rule="evenodd"
-            d="M8.40592 2H12.1915C13.7009 1.99999 14.8969 1.99998 15.8479 2.10214C16.8231 2.2069 17.6322 2.42646 18.3258 2.92793C18.7178 3.21141 19.0641 3.5512 19.353 3.93588C19.8641 4.61638 20.0878 5.41029 20.1946 6.36722C20.2987 7.30037 20.2987 8.47384 20.2987 9.95493V10.0451C20.2987 11.5262 20.2987 12.6996 20.1946 13.6328C20.0878 14.5897 19.8641 15.3836 19.353 16.0641C19.0641 16.4488 18.7178 16.7886 18.3258 17.0721C17.6322 17.5735 16.8231 17.7931 15.8479 17.8979C14.8969 18 13.7009 18 12.1915 18H8.40594C6.89649 18 5.70055 18 4.74954 17.8979C3.77429 17.7931 2.96518 17.5735 2.27165 17.0721C1.87961 16.7886 1.53331 16.4488 1.24441 16.0641C0.733336 15.3836 0.509572 14.5897 0.402803 13.6328C0.298687 12.6996 0.298696 11.5262 0.298706 10.0451V9.95491C0.298696 8.47383 0.298687 7.30036 0.402803 6.36722C0.509572 5.41029 0.733336 4.61638 1.24441 3.93588C1.53331 3.5512 1.87961 3.21141 2.27165 2.92793C2.96518 2.42646 3.77429 2.2069 4.74954 2.10214C5.70055 1.99998 6.89648 1.99999 8.40592 2ZM4.91623 3.59614C4.07291 3.68673 3.56748 3.85788 3.18032 4.13783C2.91208 4.33179 2.67514 4.56428 2.47747 4.82748C2.19216 5.20737 2.01773 5.7033 1.92541 6.53078C1.83148 7.37259 1.83041 8.46376 1.83041 10C1.83041 11.5362 1.83148 12.6274 1.92541 13.4692C2.01773 14.2967 2.19216 14.7926 2.47747 15.1725C2.67514 15.4357 2.91208 15.6682 3.18032 15.8622C3.56748 16.1421 4.07291 16.3133 4.91623 16.4039C5.77416 16.496 6.88622 16.4971 8.45187 16.4971H12.1455C13.7112 16.4971 14.8232 16.496 15.6812 16.4039C16.5245 16.3133 17.0299 16.1421 17.4171 15.8622C17.6853 15.6682 17.9223 15.4357 18.1199 15.1725C18.4053 14.7926 18.5797 14.2967 18.672 13.4692C18.7659 12.6274 18.767 11.5362 18.767 10C18.767 8.46376 18.7659 7.37259 18.672 6.53078C18.5797 5.7033 18.4053 5.20737 18.1199 4.82748C17.9223 4.56428 17.6853 4.33179 17.4171 4.13783C17.0299 3.85788 16.5245 3.68673 15.6812 3.59614C14.8232 3.50398 13.7112 3.50293 12.1455 3.50293H8.45187C6.88622 3.50293 5.77416 3.50398 4.91623 3.59614Z"
-            fill="currentColor"
-          ></path>
-        </svg>
-        <a href="mailto:jakub@bednarski.dev">Jakub@Bednarski.Dev</a>
-      </BaseTag>
-
-      <BaseTag>
-        <svg width="18" height="17" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path
-            fill-rule="evenodd"
-            clip-rule="evenodd"
-            d="M10 1C5.07504 1 1 4.9078 1 9.8312C1 11.8148 1.66696 13.6432 2.7855 15.1123C2.9659 15.3493 3.02377 15.5422 3.0146 15.6792C2.96869 16.3648 2.73933 17.0367 2.15953 17.6394C1.95948 17.8473 1.89268 18.1554 1.98506 18.4315C2.0776 18.7081 2.31536 18.908 2.5998 18.9397C4.42103 19.1428 6.02795 18.799 6.98589 18.4095C7.21448 18.3165 7.43307 18.2998 7.6091 18.3473C8.37142 18.5529 9.17331 18.6624 10 18.6624C14.925 18.6624 19 14.7546 19 9.8312C19 4.9078 14.925 1 10 1ZM2.46752 9.8312C2.46752 5.84346 5.7947 2.52801 10 2.52801C14.2053 2.52801 17.5325 5.84346 17.5325 9.8312C17.5325 13.8189 14.2053 17.1344 10 17.1344C9.29812 17.1344 8.61989 17.0415 7.97716 16.8681C7.44373 16.7243 6.90604 16.8015 6.45189 16.9862C5.91921 17.2028 5.07261 17.4197 4.06131 17.4639C4.31547 16.9133 4.44117 16.344 4.47857 15.7855C4.52324 15.1184 4.23423 14.5554 3.93552 14.1631C3.00996 12.9474 2.46752 11.4495 2.46752 9.8312Z"
-            fill="currentColor"
-          ></path>
-          <path d="M7 10C7 10.5523 6.55228 11 6 11C5.44772 11 5 10.5523 5 10C5 9.44771 5.44772 9 6 9C6.55228 9 7 9.44771 7 10Z" fill="currentColor"></path>
-          <path d="M11 10C11 10.5523 10.5523 11 10 11C9.44771 11 9 10.5523 9 10C9 9.44771 9.44771 9 10 9C10.5523 9 11 9.44771 11 10Z" fill="currentColor"></path>
-          <path d="M15 10C15 10.5523 14.5523 11 14 11C13.4477 11 13 10.5523 13 10C13 9.44771 13.4477 9 14 9C14.5523 9 15 9.44771 15 10Z" fill="currentColor"></path>
-        </svg>
-        <p>Polish, English</p>
-      </BaseTag>
-
-      <BaseTag @click="$router.push('/share')" class="cursor-pointer xl:hidden">
-        <svg width="18" height="17" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor">
-          <path
-            d="M8.5 4H6C4.89543 4 4 4.89543 4 6V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V6C20 4.89543 19.1046 4 18 4H15.5"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-          ></path>
-          <path
-            d="M8 6.4V4.5C8 4.22386 8.22386 4 8.5 4C8.77614 4 9.00422 3.77604 9.05152 3.50398C9.19968 2.65171 9.77399 1 12 1C14.226 1 14.8003 2.65171 14.9485 3.50398C14.9958 3.77604 15.2239 4 15.5 4C15.7761 4 16 4.22386 16 4.5V6.4C16 6.73137 15.7314 7 15.4 7H8.6C8.26863 7 8 6.73137 8 6.4Z"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-          ></path>
-        </svg>
-        <p>Share</p>
-      </BaseTag>
-    </div>
-  </section>
-
-  <section class="my-12 flex flex-col flex-nowrap">
-    <BaseHeader subtitle="Tools Section">Tools & Software</BaseHeader>
-
-    <div class="flex flex-row flex-wrap gap-2 xl:gap-4 justify-center mt-6">
-      <BaseTag> Vue.js</BaseTag>
-      <BaseTag> Nuxt.js</BaseTag>
-      <BaseTag> Tailwind CSS</BaseTag>
-      <BaseTag> TypeScript</BaseTag>
-      <BaseTag> Nest.js</BaseTag>
-      <BaseTag> Fastify.js</BaseTag>
-      <BaseTag> Docker</BaseTag>
-      <BaseTag> GitHub</BaseTag>
-      <BaseTag> GitHub Actions</BaseTag>
-
-      <BaseTag> GitHub Copilot</BaseTag>
-      <BaseTag> VSCode</BaseTag>
-      <BaseTag> Figma</BaseTag>
-    </div>
-
-    <div class="flex flex-row flex-wrap gap-4 justify-center mt-6">
-      <p class="max-w-prose text-center"> I continually explore and adopt new tools and software to enhance my project development and workflow efficiency.</p>
-    </div>
-  </section>
-
-  <section class="my-12 flex flex-col flex-nowrap">
-    <BaseHeader subtitle="Professional Services">Services</BaseHeader>
-
-    <div class="flex flex-row flex-wrap gap-4 xl:gap-8 justify-center mt-6">
-      <BaseCard title="Full-Stack Web Development">
-        <p>As a Full-Stack Developer, I craft seamless and scalable web applications from concept to deployment, utilizing advanced frameworks and technologies.</p>
-      </BaseCard>
-
-      <BaseCard title="UI/UX Design">
-        <p>My design expertise focuses on creating intuitive user interfaces and engaging user experiences, using tools like Figma and Tailwind CSS to bring visions to life.</p>
-      </BaseCard>
-
-      <BaseCard title="Tech Consulting">
-        <p>Providing expert consulting on web solutions, digital strategies, and technology integration to optimize business processes and performance.</p>
-      </BaseCard>
-
-      <BaseCard title="DevOps Solutions">
-        <p>Expertise in DevOps practices, focusing on automation, continuous integration (CI), and continuous deployment (CD) to enhance project lifecycle.</p>
-      </BaseCard>
-
-      <BaseCard title="IoT Innovations">
-        <p>Developing innovative Internet of Things (IoT) solutions that integrate seamlessly with modern web technologies to drive digital transformation.</p>
-      </BaseCard>
-
-      <BaseCard title="Project Leadership">
-        <p>Providing strategic project management services that deliver projects on time, within budget, and above expectations in technology-driven environments.</p>
-      </BaseCard>
-    </div>
-
-    <div class="flex flex-row flex-wrap gap-4 justify-center mt-6">
-      <p class="max-w-prose text-center"
-        >Dedicated to continually enhancing my skill set and adopting innovative tools to maximize efficiency and deliver cutting-edge solutions.</p
-      >
-    </div>
-  </section>
+  <ServicesSection />
 
   <ContactSection />
-
-  <section class="my-12 flex flex-col flex-nowrap items-center">
-    <BaseHeader subtitle="Content Section">Articles</BaseHeader>
-
-    <div
-      class="flex flex-col xl:flex-row gap-8 xl:gap-28 justify-center mt-8 flex-nowrap w-full"
-      v-if="activeArticle"
-      @mouseenter="pauseArticleInterval = true"
-      @mouseleave="pauseArticleInterval = false"
-    >
-      <div class="flex flex-col w-full xl:w-96 xl:ml-64 items-center xl:items-start">
-        <div class="flex flex-row gap-2 items-center border-b pb-6 border-dark-light w-full justify-center xl:justify-start">
-          <div class="rounded-full bg-dark-light w-8 h-1 transition-all duration-100 ease-in-out" :class="{ 'bg-dark-lighter !w-14': activeArticleIndex === 0 }"></div>
-          <div class="rounded-full bg-dark-light w-8 h-1 transition-all duration-100 ease-in-out" :class="{ 'bg-dark-lighter !w-14': activeArticleIndex === 1 }"></div>
-          <div class="rounded-full bg-dark-light w-8 h-1 transition-all duration-100 ease-in-out" :class="{ 'bg-dark-lighter !w-14': activeArticleIndex === 2 }"></div>
-        </div>
-
-        <div class="w-full max-w-sm animate-fade-in-right" :key="activeArticle._id" :class="{ '!animate-fade-out-right': runAnimation }">
-          <p class="opacity-50 text-sm mb-2 mt-4"> {{ formatDate(activeArticle.date) }} </p>
-
-          <h3 class="font-headings text-4xl font-semibold">{{ activeArticle.title }}</h3>
-          <p class="mt-4">{{ activeArticle.description }}</p>
-
-          <div class="flex flex-row gap-2 mt-6">
-            <BaseTag v-for="tag in activeArticle.tags" :key="tag"> {{ tag }}</BaseTag>
-          </div>
-        </div>
-      </div>
-
-      <BlogCard :title="activeArticle._path">
-        <MarkdownContentRendered
-          :disableInteractivity="true"
-          @click="$router.push(activeArticle._path)"
-          :class="{ 'blur-md': runAnimation }"
-          class="p-4 scale-75 -translate-y-6 h-full w-full blur-xs hover:blur-none transition-all transform-gpu duration-200 ease-in-out"
-          :path="activeArticle._path"
-        />
-      </BlogCard>
-    </div>
-
-    <div class="flex flex-row flex-wrap gap-4 justify-center mt-8">
-      <p class="max-w-prose text-center"> I write articles on various topics, including web development, design, and technology. </p>
-    </div>
-  </section>
 
   <section class="flex-row items-center justify-center flex bg-stripes bg-stripe py-8 rounded-sm border border-dark-lighter">
     <div class="flex flex-col gap-4 items-center">
@@ -204,7 +29,7 @@
           ></path>
         </svg>
 
-        <h3 class="text-base">Coming soon...</h3>
+        <h3 class="text-base">Work in Progress, Coming soon...</h3>
       </BaseTag>
       <p class="max-w-lg text-center"
         >In the meantime, check out last year's
@@ -222,52 +47,19 @@
 <script>
   import { defineComponent } from 'vue';
   import ContactSection from '~/components/sections/ContactSection.vue';
+  import HeroSection from '~/components/sections/HeroSection.vue';
+  import ArticlesSection from '~/components/sections/ArticlesSection.vue';
+  import ToolsSection from '~/components/sections/ToolsSection.vue';
+  import ServicesSection from '~/components/sections/ServicesSection.vue';
 
   export default defineComponent({
     name: 'Home',
     components: {
+      HeroSection,
       ContactSection,
-    },
-
-    data() {
-      return {
-        articles: [],
-
-        activeArticleIndex: 0,
-        runAnimation: false,
-      };
-    },
-
-    async mounted() {
-      this.articles = await queryContent('blog').find();
-
-      setInterval(() => {
-        if (this.pauseArticleInterval) return;
-
-        this.runAnimation = true;
-
-        setTimeout(() => {
-          this.runAnimation = false;
-
-          this.activeArticleIndex = this.activeArticleIndex === this.articles.length - 1 ? 0 : this.activeArticleIndex + 1;
-        }, 200);
-      }, 5000);
-    },
-
-    methods: {
-      formatDate(date) {
-        return new Date(date).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        });
-      },
-    },
-
-    computed: {
-      activeArticle() {
-        return this.articles[this.activeArticleIndex];
-      },
+      ArticlesSection,
+      ToolsSection,
+      ServicesSection,
     },
 
     created() {
