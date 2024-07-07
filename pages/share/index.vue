@@ -1,8 +1,8 @@
 <template>
-  <section class="flex flex-col gap-4 items-center transition-all duration-300 ease-in-out" :class="{ 'rotate-180 ': isFlipped }">
-    <ShareQRIcon class="w-full max-w-xl pb-4 border-b border-dark-lighter border-dashed" />
+  <section class="flex flex-col gap-4 items-center transition-all duration-200 ease-in-out" :class="{ 'rotate-180 ': isFlipped }">
+    <ShareQRIcon class="w-full max-w-xl pb-4 border-b border-dark-light" />
 
-    <div class="flex flex-row flex-wrap xl:flex-col gap-4">
+    <div class="flex flex-row flex-wrap xl:flex-col gap-4 items-center justify-center">
       <BaseTag>
         <svg width="18" height="17" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path
@@ -13,7 +13,7 @@
           ></path>
         </svg>
 
-        <p>Rzeszów, Poland <span class="text-xs">(GMT+1)</span></p>
+        <p>Rzeszów, Poland (GMT+1)</p>
       </BaseTag>
 
       <BaseTag>
@@ -74,7 +74,6 @@
   <section class="fixed bottom-10 right-0 p-4">
     <button
       @click="flipView"
-      :class="{ 'animate-spin': isFlipped }"
       class="p-4 flex flex-row gap-3 w-min sflex-shrink-0 whitespace-nowrap shadow-inner-white flex-nowrap items-center bg-dark-light border border-dark-lighter rounded-full text-sm"
       ><svg width="24px" height="24px" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor">
         <path

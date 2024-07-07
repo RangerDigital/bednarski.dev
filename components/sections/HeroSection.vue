@@ -13,9 +13,9 @@
     <!-- Front Layer -->
     <section class="col-start-1 row-start-1 flex-col justify-center flex w-full h-full xl:pb-56 gap-4 mt-10 xl:mt-0">
       <div class="flex flex-col gap-3 items-center">
-        <h1 class="text-4xl xl:text-7xl font-medium font-headings text-center max-w-[90rem] !leading-tight">
+        <h1 class="text-3xl xl:text-7xl font-medium font-headings text-center max-w-[90rem] !leading-tight">
           Building<span class="text-primary whitespace-nowrap">
-            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="inline-block h-[1.1cap] translate-x-3 -translate-y-1">
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="inline-block h-[1.1cap] translate-x-2 xl:translate-x-3 -translate-y-1">
               <path
                 fill-rule="evenodd"
                 clip-rule="evenodd"
@@ -35,7 +35,7 @@
           >
           software products from
           <span class="text-primary whitespace-nowrap"
-            ><svg class="inline-block h-[1.1cap] translate-x-2" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            ><svg class="inline-block h-[1.1cap] translate-x-1 xl:translate-x-3" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
                 d="M16.5871 13.7249C16.9585 14.0613 17.5153 14.3179 18.0431 14.5035C18.6029 14.7004 18.8829 14.7989 18.8829 14.8908C18.8829 14.9828 18.6029 15.0813 18.0431 15.2782C17.5153 15.4638 16.9585 15.7204 16.5871 16.0568C16.1299 16.471 15.8011 17.1443 15.5729 17.7902C15.3386 18.4532 15.2214 18.7847 15.1296 18.7847C15.0377 18.7847 14.9206 18.4532 14.6863 17.7902C14.4581 17.1443 14.1293 16.471 13.6721 16.0568C13.3007 15.7204 12.7439 15.4638 12.2161 15.2782C11.6562 15.0813 11.3763 14.9828 11.3763 14.8908C11.3763 14.7989 11.6562 14.7004 12.2161 14.5035C12.7439 14.3179 13.3007 14.0613 13.6721 13.7249C14.1293 13.3107 14.4581 12.6374 14.6863 11.9915C14.9206 11.3285 15.0377 10.997 15.1296 10.997C15.2214 10.997 15.3386 11.3285 15.5729 11.9915C15.8011 12.6374 16.1299 13.3107 16.5871 13.7249Z"
                 fill="currentColor"
@@ -59,7 +59,7 @@
           >
           to
           <span class="text-primary whitespace-nowrap">
-            <svg class="inline-block h-[1.1cap] translate-x-2 -translate-y-1" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg class="inline-block h-[1.1cap] translate-x-1 xl:translate-x-3 xl:-translate-y-1" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
                 fill-rule="evenodd"
                 clip-rule="evenodd"

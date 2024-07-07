@@ -10,24 +10,28 @@
       <img src="/img/tailwind-uwu.png" alt="Tailwind CSS Logo" class="xl:w-1/5 flex-shrink-0" />
     </div>
 
-    <div class="flex flex-row flex-wrap gap-2 xl:gap-4 justify-center mt-6">
-      <BaseTag> Vue.js</BaseTag>
-      <BaseTag> Nuxt.js</BaseTag>
-      <BaseTag> Tailwind CSS</BaseTag>
-      <BaseTag> TypeScript</BaseTag>
-      <BaseTag> Nest.js</BaseTag>
-      <BaseTag> Fastify.js</BaseTag>
-      <BaseTag> Docker</BaseTag>
-      <BaseTag> GitHub</BaseTag>
-      <BaseTag> GitHub Actions</BaseTag>
-
-      <BaseTag> GitHub Copilot</BaseTag>
-      <BaseTag> VSCode</BaseTag>
-      <BaseTag> Figma</BaseTag>
-    </div>
-
     <div class="flex flex-row flex-wrap gap-4 justify-center mt-6">
       <p class="max-w-prose text-center"> I continually explore and adopt new tools and software to enhance my project development and workflow efficiency.</p>
+    </div>
+
+    <div class="flex flex-row justify-center">
+      <div class="flex flex-row flex-wrap gap-2 xl:gap-2 justify-center mt-6 max-w-4xl">
+        <BaseTag> Vue.js</BaseTag>
+        <BaseTag> Nuxt.js</BaseTag>
+        <BaseTag> Tailwind CSS</BaseTag>
+        <BaseTag> TypeScript</BaseTag>
+        <BaseTag> Nest.js</BaseTag>
+        <BaseTag> Fastify.js</BaseTag>
+        <BaseTag> Docker</BaseTag>
+        <BaseTag> MongoDB</BaseTag>
+        <BaseTag> PostgreSQL</BaseTag>
+        <BaseTag> Redis</BaseTag>
+        <BaseTag> Cloudflare</BaseTag>
+        <BaseTag> GitHub Actions</BaseTag>
+        <BaseTag> GitHub Copilot</BaseTag>
+        <BaseTag> VSCode</BaseTag>
+        <BaseTag> Figma</BaseTag>
+      </div>
     </div>
   </section>
 </template>
