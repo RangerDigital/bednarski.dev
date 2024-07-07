@@ -1,5 +1,5 @@
 <template>
-  <section class="grid grid-cols-1 grid-rows-1 xl:h-[85vh] w-full">
+  <section class="grid grid-cols-1 grid-rows-1 xl:h-[72vh] w-full">
     <!-- Background Layer -->
     <section class="hidden col-start-1 row-start-1 pointer-events-none xl:flex flex-row justify-evenly">
       <div
@@ -78,8 +78,8 @@
         >
 
         <p class="max-w-prose text-center mt-6 leading-7 xl:mt-12 border-t pt-4 border-dark-light">
-          <span class="font-medium text-primary underline underline-offset-4">Jakub Bednarski, Full-Stack Design Engineer</span> - who loves building and breaking visually pleasing
-          web apps and internet of things products. Fan of anime, Tailwind, Nest.js, Fastify.js, Vue.js, DevOps and Open Source software.</p
+          <span class="text-primary underline underline-offset-4">Jakub Bednarski, Full-Stack Design Engineer</span> - who loves building and breaking visually pleasing web apps
+          and internet of things products. Enthusiast of Porsche, Tailwind, Nest.js, Fastify.js, Vue.js, DevOps and Open Source software.</p
         >
 
         <div class="flex flex-row gap-4 justify-center flex-wrap mt-2">

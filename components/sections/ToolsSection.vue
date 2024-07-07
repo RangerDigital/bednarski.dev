@@ -2,6 +2,14 @@
   <section class="my-12 flex flex-col flex-nowrap">
     <BaseHeader subtitle="Tools Section">Tools & Software</BaseHeader>
 
+    <div class="flex xl:flex-row flex-col xl:flex-wrap gap-2 xl:gap-4 justify-center mt-6">
+      <img src="/img/vue-uwu.png" alt="Vue.js Logo" class="xl:w-1/5 flex-shrink-0" />
+
+      <img src="/img/node-uwu.png" alt="Node.js Logo" class="xl:w-1/5 flex-shrink-0" />
+
+      <img src="/img/tailwind-uwu.png" alt="Tailwind CSS Logo" class="xl:w-1/5 flex-shrink-0" />
+    </div>
+
     <div class="flex flex-row flex-wrap gap-2 xl:gap-4 justify-center mt-6">
       <BaseTag> Vue.js</BaseTag>
       <BaseTag> Nuxt.js</BaseTag>
