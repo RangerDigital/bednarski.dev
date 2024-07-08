@@ -1,5 +1,5 @@
 <template>
-  <section class="grid grid-cols-1 grid-rows-1 xl:h-[72vh] w-full">
+  <section class="grid grid-cols-1 grid-rows-1 3xl:h-[72vh] w-full">
     <!-- Background Layer -->
     <section class="hidden col-start-1 row-start-1 pointer-events-none xl:flex flex-row justify-evenly">
       <div
@@ -11,7 +11,7 @@
     </section>
 
     <!-- Front Layer -->
-    <section class="col-start-1 row-start-1 flex-col justify-center flex w-full h-full xl:pb-56 gap-4 mt-4 xl:mt-0">
+    <section class="col-start-1 row-start-1 flex-col justify-center flex w-full h-full xl:pb-56 gap-4 mt-4 xl:mt-8 3xl:mt-0">
       <div class="flex flex-col gap-3 items-center">
         <h1 class="text-3xl xl:text-7xl font-medium font-headings text-center max-w-[90rem] !leading-tight pb-4 xl:pb-0 anime-hero-item">
           Building<span class="text-primary whitespace-nowrap">

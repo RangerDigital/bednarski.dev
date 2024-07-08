@@ -12,6 +12,11 @@ export default {
         xs: '3px',
       },
 
+      // add 3xl breakpoint
+      screens: {
+        '3xl': '2000px',
+      },
+
       // animate reveal from right to left with opacity
 
       keyframes: {

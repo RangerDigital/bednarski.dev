@@ -38,6 +38,10 @@
 
     mounted() {
       this.componentWidth = this.$el.offsetWidth;
+
+      window.addEventListener('resize', () => {
+        this.componentWidth = this.$el.offsetWidth;
+      });
     },
   });
 </script>
