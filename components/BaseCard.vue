@@ -1,9 +1,7 @@
 <template>
-  <div class="flex mt-4 pt-0 max-w-prose w-full flex-col flex-shrink-0 shadow-inner-white flex-nowrap border border-dark-lighter rounded justify-between">
+  <div class="flex mt-4 pt-0 max-w-sm w-full flex-col flex-shrink-0 shadow-inner-white flex-nowrap border border-dark-lighter rounded justify-between">
     <div>
-      <BaseTag class="ml-4 -translate-y-4">
-        {{ title }}
-      </BaseTag>
+      <BaseTag class="ml-4 -translate-y-4"> <slot name="icon"></slot> {{ title }} </BaseTag>
 
       <div class="p-4 pt-0">
         <slot></slot>

@@ -1,13 +1,13 @@
 <template>
   <HeroSection />
 
-  <ToolsSection />
+  <ToolsSection class="mt-28" />
 
-  <ArticlesSection class="xl:mt-16" />
+  <ContactSection class="xl:mt-32" />
 
-  <ServicesSection class="xl:mt-16" />
+  <ArticlesSection class="xl:mt-32" />
 
-  <ContactSection class="xl:mt-16" />
+  <ServicesSection class="xl:mt-32" />
 </template>
 
 <script>

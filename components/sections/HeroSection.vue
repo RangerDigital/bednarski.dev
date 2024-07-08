@@ -11,9 +11,9 @@
     </section>
 
     <!-- Front Layer -->
-    <section class="col-start-1 row-start-1 flex-col justify-center flex w-full h-full xl:pb-56 gap-4 mt-10 xl:mt-0">
+    <section class="col-start-1 row-start-1 flex-col justify-center flex w-full h-full xl:pb-56 gap-4 mt-4 xl:mt-0">
       <div class="flex flex-col gap-3 items-center">
-        <h1 class="text-3xl xl:text-7xl font-medium font-headings text-center max-w-[90rem] !leading-tight">
+        <h1 class="text-3xl xl:text-7xl font-medium font-headings text-center max-w-[90rem] !leading-tight pb-4 xl:pb-0 anime-hero-item">
           Building<span class="text-primary whitespace-nowrap">
             <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="inline-block h-[1.1cap] translate-x-2 xl:translate-x-3 -translate-y-1">
               <path
@@ -77,14 +77,14 @@
           >.</h1
         >
 
-        <p class="max-w-prose text-center mt-6 leading-7 xl:mt-12 border-t pt-4 border-dark-light">
-          <span class="text-primary underline underline-offset-4">Jakub Bednarski, Full-Stack Design Engineer</span> - who loves building and breaking visually pleasing web apps
-          and internet of things products. Enthusiast of Porsche, Tailwind, Nest.js, Fastify.js, Vue.js, DevOps and Open Source software.</p
+        <p class="max-w-prose xl:text-center mt-6 leading-7 xl:mt-14 whitespace-break-spaces">
+          <span class="text-primary underline underline-offset-4">Jakub Bednarski, Full-Stack Design Engineer</span> who loves building and breaking visually pleasing web apps and
+          internet of things products.<br class="xl:hidden" /><br />Enthusiast of Porsche cars, Tailwind, Nest.js, MongoDB, Vue.js, DevOps tools and Open Source software.</p
         >
 
-        <div class="flex flex-row gap-4 justify-center flex-wrap mt-2">
-          <BaseTag>
-            <svg width="18" height="17" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <div class="flex flex-row gap-4 justify-center flex-wrap mt-2 max-w-2xl">
+          <BaseTag class="text-xs xl:text-sm anime-hero-item">
+            <svg class="h-[1.7cap]" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
                 fill-rule="evenodd"
                 clip-rule="evenodd"
@@ -93,11 +93,23 @@
               ></path>
             </svg>
 
-            <p>Rzeszów, Poland (GMT+1) </p>
+            <a href="https://www.google.com/maps/place/Rzesz%C3%B3w/">Rzeszów, Poland (GMT+1) </a>
           </BaseTag>
 
-          <BaseTag>
-            <svg width="18" height="17" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <BaseTag class="text-xs xl:text-sm anime-hero-item">
+            <svg class="h-[1.7cap]" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor">
+              <path
+                d="M16.8198 20.7684L3.75317 3.96836C3.44664 3.57425 3.72749 3 4.22678 3H6.70655C6.8917 3 7.06649 3.08548 7.18016 3.23164L20.2468 20.0316C20.5534 20.4258 20.2725 21 19.7732 21H17.2935C17.1083 21 16.9335 20.9145 16.8198 20.7684Z"
+                stroke="currentColor"
+                stroke-width="1.5"
+              ></path>
+              <path d="M20 3L4 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+            <a href="https://x.com/rangesaur">Twitter</a>
+          </BaseTag>
+
+          <BaseTag class="text-xs xl:text-sm anime-hero-item">
+            <svg class="h-[1.7cap]" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
                 fill-rule="evenodd"
                 clip-rule="evenodd"
@@ -111,11 +123,25 @@
                 fill="currentColor"
               ></path>
             </svg>
-            <a href="mailto:jakub@bednarski.dev">Jakub@Bednarski.Dev</a>
+            <a href="mailto:jakub@bednarski.dev">jakub@bednarski.Dev</a>
           </BaseTag>
 
-          <BaseTag>
-            <svg width="18" height="17" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <BaseTag class="text-xs xl:text-sm anime-hero-item">
+            <svg class="h-[1.7cap]" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor">
+              <path
+                d="M16 22.0268V19.1568C16.0375 18.68 15.9731 18.2006 15.811 17.7506C15.6489 17.3006 15.3929 16.8902 15.06 16.5468C18.2 16.1968 21.5 15.0068 21.5 9.54679C21.4997 8.15062 20.9627 6.80799 20 5.79679C20.4558 4.5753 20.4236 3.22514 19.91 2.02679C19.91 2.02679 18.73 1.67679 16 3.50679C13.708 2.88561 11.292 2.88561 8.99999 3.50679C6.26999 1.67679 5.08999 2.02679 5.08999 2.02679C4.57636 3.22514 4.54413 4.5753 4.99999 5.79679C4.03011 6.81549 3.49251 8.17026 3.49999 9.57679C3.49999 14.9968 6.79998 16.1868 9.93998 16.5768C9.61098 16.9168 9.35725 17.3222 9.19529 17.7667C9.03334 18.2112 8.96679 18.6849 8.99999 19.1568V22.0268"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></path>
+              <path d="M9 20.0267C6 20.9999 3.5 20.0267 2 17.0267" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            <a href="https://github.com/RangerDigital">GitHub</a>
+          </BaseTag>
+
+          <BaseTag class="text-xs xl:text-sm anime-hero-item">
+            <svg class="h-[1.7cap]" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
                 fill-rule="evenodd"
                 clip-rule="evenodd"
@@ -128,7 +154,27 @@
             </svg>
             <p>Polish, English</p>
           </BaseTag>
+
+          <BaseTag class="text-xs xl:text-sm anime-hero-item">
+            <svg class="h-[1.7cap]" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M4.33809 8.03065C4.33809 6.53513 5.55045 5.32277 7.04597 5.32277C8.54149 5.32277 9.75384 6.53513 9.75384 8.03065C9.75384 9.52617 8.54149 10.7385 7.04597 10.7385C5.55045 10.7385 4.33809 9.52617 4.33809 8.03065ZM7.04597 6.7998C6.36619 6.7998 5.81511 7.35087 5.81511 8.03065C5.81511 8.71043 6.36619 9.2615 7.04597 9.2615C7.72575 9.2615 8.27682 8.71043 8.27682 8.03065C8.27682 7.35087 7.72575 6.7998 7.04597 6.7998Z"
+                fill="currentColor"
+              ></path>
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M10.0493 1H9.95073C8.2882 0.999993 6.97362 0.999987 5.92809 1.11326C4.85696 1.22931 3.97154 1.47208 3.21122 2.02448C2.75583 2.35535 2.35535 2.75583 2.02448 3.21122C1.47208 3.97154 1.22931 4.85696 1.11326 5.92809C0.999987 6.97362 0.999993 8.2882 1 9.95073V10.0493C0.999993 11.7118 0.999987 13.0264 1.11326 14.0719C1.22931 15.143 1.47208 16.0285 2.02448 16.7888C2.35535 17.2442 2.75583 17.6447 3.21122 17.9755C3.97154 18.5279 4.85696 18.7707 5.92809 18.8867C6.97362 19 8.28819 19 9.9507 19H10.0493C11.7118 19 13.0264 19 14.0719 18.8867C15.143 18.7707 16.0285 18.5279 16.7888 17.9755C17.2442 17.6447 17.6447 17.2442 17.9755 16.7888C18.5279 16.0285 18.7707 15.143 18.8867 14.0719C19 13.0264 19 11.7118 19 10.0493V9.9507C19 8.28819 19 6.97362 18.8867 5.92809C18.7707 4.85696 18.5279 3.97154 17.9755 3.21122C17.6447 2.75583 17.2442 2.35535 16.7888 2.02448C16.0285 1.47208 15.143 1.22931 14.0719 1.11326C13.0264 0.999987 11.7118 0.999993 10.0493 1ZM4.09366 3.23904C4.5554 2.90357 5.14641 2.70802 6.08981 2.60581C7.04596 2.50221 8.28069 2.50128 10 2.50128C11.7193 2.50128 12.9541 2.50221 13.9102 2.60581C14.8536 2.70802 15.4446 2.90357 15.9064 3.23904C16.2343 3.47731 16.5227 3.76571 16.761 4.09366C17.0965 4.5554 17.292 5.14641 17.3942 6.08981C17.4978 7.04596 17.4988 8.28069 17.4988 10C17.4988 10.2959 17.4987 10.5774 17.4982 10.8456C17.219 10.6693 16.9921 10.5382 16.7641 10.445C15.5408 9.94517 14.1436 10.1372 13.1005 10.9484C12.8265 11.1615 12.5749 11.4468 12.2073 11.8636L11.3416 12.8448C10.7934 13.466 9.86496 13.574 9.18884 13.0951C7.88868 12.1741 6.10199 12.3894 5.05782 13.5929L3.15597 15.7849C2.87078 15.3409 2.69927 14.7729 2.60581 13.9102C2.50221 12.9541 2.50128 11.7193 2.50128 10C2.50128 8.28069 2.50221 7.04596 2.60581 6.08981C2.70802 5.14641 2.90357 4.5554 3.23904 4.09366C3.47731 3.76571 3.76571 3.47731 4.09366 3.23904ZM4.20061 16.8346C4.64671 17.1255 5.21768 17.2997 6.08981 17.3942C7.04596 17.4978 8.28069 17.4988 10 17.4988C11.7193 17.4988 12.9541 17.4978 13.9102 17.3942C14.8536 17.292 15.4446 17.0965 15.9064 16.761C16.2343 16.5227 16.5227 16.2343 16.761 15.9064C17.0965 15.4446 17.292 14.8536 17.3942 13.9102C17.4364 13.5209 17.461 13.0849 17.476 12.5893L17.1329 12.367C16.577 12.007 16.3817 11.8843 16.2054 11.8123C15.4714 11.5124 14.6332 11.6276 14.0073 12.1143C13.8569 12.2313 13.702 12.4021 13.2638 12.8987L12.4491 13.822C11.4015 15.0093 9.6272 15.2156 8.33509 14.3004C7.65476 13.8185 6.71984 13.9311 6.17345 14.5609L4.20061 16.8346Z"
+                fill="currentColor"
+              ></path>
+            </svg>
+            <a href="https://www.artstation.com/ranger_digital/profile">ArtStation</a>
+          </BaseTag>
         </div>
+
+        <BaseButton @click="scrollTo('#contact-form')" class="mt-10 xl:mt-14 anime-hero-item">Connect with Me</BaseButton>
       </div>
     </section>
   </section>
@@ -136,6 +182,7 @@
 
 <script>
   import { defineComponent } from 'vue';
+  import anime from 'animejs';
 
   export default defineComponent({
     name: 'HeroSection',
@@ -146,9 +193,25 @@
       };
     },
 
+    methods: {
+      scrollTo(selector) {
+        document.querySelector(selector).scrollIntoView({ behavior: 'smooth', block: 'center' });
+      },
+    },
+
     mounted() {
       window.addEventListener('scroll', () => {
         this.heights = this.heights.map(() => Math.floor(Math.random() * 10) + 65);
+      });
+
+      anime({
+        targets: '.anime-hero-item',
+        translateY: [25, 0],
+        opacity: [0, 1],
+        easing: 'easeInOutSine',
+        delay: anime.stagger(150, { start: 2100 }),
+
+        duration: 600,
       });
     },
   });

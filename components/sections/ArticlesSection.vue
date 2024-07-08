@@ -1,9 +1,9 @@
 <template>
   <section class="my-12 flex flex-col flex-nowrap items-center">
-    <BaseHeader subtitle="Content Section">Articles</BaseHeader>
+    <BaseHeader subtitle="Content Section">My Articles</BaseHeader>
 
     <div
-      class="flex flex-col xl:flex-row gap-8 xl:gap-28 justify-center mt-8 flex-nowrap w-full"
+      class="flex flex-col xl:flex-row gap-8 xl:gap-28 justify-center mt-8 flex-nowrap w-full h-[650px] xl:h-auto"
       v-if="activeArticle"
       @mouseenter="pauseArticleInterval = true"
       @mouseleave="pauseArticleInterval = false"
@@ -38,8 +38,12 @@
       </BlogCard>
     </div>
 
-    <div class="flex flex-row flex-wrap gap-4 justify-center mt-8">
-      <p class="max-w-prose text-center"> I write articles on various topics, including web development, design, and technology. </p>
+    <div class="flex flex-col items-center gap-4 justify-center mt-8">
+      <p class="max-w-prose text-center">
+        I write articles on various topics, including web development, design, and technology. Mostly about Vue.js, Nuxt.js, Tailwind CSS, and other tools I use daily.
+      </p>
+
+      <a href="/blog" class="text-primary underline underline-offset-4"> Read More Articles </a>
     </div>
   </section>
 </template>

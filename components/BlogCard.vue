@@ -1,5 +1,5 @@
 <template>
-  <section class="w-full max-w-xl rounded h-96 overflow-hidden shadow-md border border-dark-lighter cursor-pointer">
+  <section class="w-full max-w-xl rounded h-96 overflow-hidden border border-dark-lighter cursor-pointer shadow-inner-white">
     <div class="absolute flex flex-row gap-5 items-center p-2 border-b border-dark-lighter" :style="{ width: componentWidth + 'px' }">
       <div class="flex flex-row gap-2">
         <!-- apple os colors -->
