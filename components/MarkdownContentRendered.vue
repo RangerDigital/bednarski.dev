@@ -1,5 +1,5 @@
 <template>
-  <ContentDoc class="flex flex-col gap-3 markdown" :class="{ 'no-hover': disableInteractivity }" />
+  <ContentDoc class="flex flex-col gap-5 markdown" :class="{ 'no-hover': disableInteractivity }" />
 </template>
 
 <script>
@@ -19,27 +19,27 @@
 
 <style>
   .markdown h1 {
-    @apply text-4xl font-semibold font-headings;
+    @apply text-4xl font-semibold font-headings mt-4 leading-relaxed;
   }
 
   .markdown h2 {
-    @apply text-2xl font-semibold font-headings;
+    @apply text-2xl font-semibold font-headings mt-4;
   }
 
   .markdown h3 {
-    @apply text-xl font-semibold font-headings;
+    @apply text-xl font-semibold font-headings mt-4;
   }
 
   .markdown h4 {
-    @apply text-lg font-semibold font-headings;
+    @apply text-lg font-semibold font-headings mt-4;
   }
 
   .markdown h5 {
-    @apply text-base font-semibold font-headings;
+    @apply text-base font-semibold font-headings mt-4;
   }
 
   .markdown h6 {
-    @apply text-sm font-semibold font-headings;
+    @apply text-sm font-semibold font-headings mt-4;
   }
 
   .markdown p {

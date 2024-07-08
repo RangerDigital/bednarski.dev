@@ -69,6 +69,9 @@
           complete: () => {
             document.body.style.overflow = 'auto';
 
+            // set session storage to prevent animation from playing again
+            sessionStorage.setItem('intro-animation', 'played');
+
             this.$emit('animation-complete');
           },
         });
@@ -81,6 +84,12 @@
     },
 
     mounted() {
+      // check if animation has already played
+      if (sessionStorage.getItem('intro-animation')) {
+        this.$emit('animation-complete');
+        return;
+      }
+
       // disable scrolling
       document.body.style.overflow = 'hidden';
 

@@ -209,7 +209,7 @@
         translateY: [25, 0],
         opacity: [0, 1],
         easing: 'easeInOutSine',
-        delay: anime.stagger(150, { start: 2100 }),
+        delay: anime.stagger(150, { start: sessionStorage.getItem('intro-animation') ? 0 : 2100 }),
 
         duration: 600,
       });

@@ -4,7 +4,7 @@
 
     <div class="flex flex-col items-center flex-wrap gap-4 xl:gap-8 justify-center mt-6">
       <div v-for="article in articles" :key="article._id" class="flex flex-col xl:flex-row w-full max-w-4xl gap-4 xl:gap-8">
-        <p class="mt-2"> {{ formatDate(article.date) }} </p>
+        <p class="mt-2 w-32 line-clamp-2"> {{ formatDate(article.date) }} </p>
 
         <BaseCard :title="article._path" class="!max-w-prose cursor-pointer" @click="$router.push(article._path)">
           <template #icon>
@@ -67,6 +67,8 @@
 
     async mounted() {
       this.articles = await queryContent('blog').find();
+
+      this.articles.sort((a, b) => new Date(b.date) - new Date(a.date));
     },
   });
 </script>

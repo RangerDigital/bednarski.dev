@@ -40,11 +40,21 @@ export default {
             transform: 'translateX(-1rem)',
           },
         },
+         
+        'spin': {
+          '0%': {
+            transform: 'rotate(0deg)',
+          },
+          '100%': {
+            transform: 'rotate(360deg)',
+          },
+        },
       },
 
       animation: {
         'fade-in-right': 'fade-in-right 0.25s ease-in-out',
         'fade-out-right': 'fade-out-right 0.25s ease-in-out forwards',
+        'spin-slow': 'spin 3s linear infinite',
       },
     
       colors: {

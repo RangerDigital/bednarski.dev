@@ -26,5 +26,11 @@
         this.isIntroLoaderComplete = true;
       },
     },
+
+    mounted() {
+      if (sessionStorage.getItem('intro-animation')) {
+        this.isIntroLoaderComplete = true;
+      }
+    },
   });
 </script>

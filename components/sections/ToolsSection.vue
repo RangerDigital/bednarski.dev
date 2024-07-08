@@ -33,7 +33,7 @@
         <BaseTag> Redis</BaseTag>
         <BaseTag> GitHub Actions</BaseTag>
         <BaseTag> GitHub Copilot</BaseTag>
-        <BaseTag> VSCode</BaseTag>
+        <BaseTag> VS Code</BaseTag>
       </div>
     </div>
   </section>
