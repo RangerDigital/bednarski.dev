@@ -123,7 +123,7 @@
                 fill="currentColor"
               ></path>
             </svg>
-            <a href="mailto:jakub@bednarski.dev">jakub@bednarski.Dev</a>
+            <a href="mailto:jakub@bednarski.dev">jakub@bednarski.dev</a>
           </BaseTag>
 
           <BaseTag class="text-xs xl:text-sm anime-hero-item">

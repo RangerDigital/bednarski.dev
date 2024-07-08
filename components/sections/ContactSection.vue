@@ -89,6 +89,10 @@
 
     methods: {
       async submitForm() {
+        if (this.isPending) {
+          return;
+        }
+
         this.isPending = true;
         this.showErrors = true;
 
