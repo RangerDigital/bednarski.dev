@@ -1,6 +1,6 @@
 <template>
   <section class="w-full h-screen fixed flex flex-row items-center justify-center overflow-hidden bg-dark z-10" id="intro-loader" @click="abortAnimation()">
-    <section class="grid grid-cols-1 grid-rows-1">
+    <section class="grid grid-cols-1 grid-rows-1" :class="{ hidden: !isReady }">
       <div class="flex flex-col justify-between gap-8 col-start-1 row-start-1 text-white text-2xl">
         <div class="flex flex-row justify-between">
           <p class="intro-cross opacity-0">+</p>
@@ -29,6 +29,12 @@
 
   export default defineComponent({
     name: 'IntroLoader',
+
+    data() {
+      return {
+        isReady: false,
+      };
+    },
 
     methods: {
       startAnimation() {
@@ -89,6 +95,8 @@
         this.$emit('animation-complete');
         return;
       }
+
+      this.isReady = true;
 
       // disable scrolling
       document.body.style.overflow = 'hidden';

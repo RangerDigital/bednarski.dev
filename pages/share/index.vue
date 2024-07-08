@@ -159,6 +159,7 @@
 <script>
   import { defineComponent } from 'vue';
   import ShareQRIcon from '@/assets/icons/share-qr.svg';
+  import anime from 'animejs';
 
   export default defineComponent({
     name: 'Share',
@@ -169,6 +170,18 @@
       return {
         isFlipped: false,
       };
+    },
+
+    mounted() {
+      anime({
+        targets: '.anime-hero-item',
+        translateY: [25, 0],
+        opacity: [0, 1],
+        easing: 'easeInOutSine',
+        delay: anime.stagger(150),
+
+        duration: 600,
+      });
     },
 
     methods: {

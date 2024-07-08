@@ -137,16 +137,16 @@
 
         if (response.ok) {
           this.showSuccess = true;
+          this.showErrors = false;
+
+          this.form = {
+            name: '',
+            email: '',
+            message: '',
+          };
         }
 
         this.isPending = false;
-        this.showErrors = false;
-
-        this.form = {
-          name: '',
-          email: '',
-          message: '',
-        };
       },
     },
   });
