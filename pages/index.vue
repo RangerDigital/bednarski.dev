@@ -3,9 +3,9 @@
 
   <ToolsSection class="mt-28" />
 
-  <ContactSection class="xl:mt-32" />
-
   <ArticlesSection class="xl:mt-32" />
+
+  <ContactSection class="xl:mt-32" />
 
   <ServicesSection class="xl:mt-32" />
 </template>

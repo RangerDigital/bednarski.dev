@@ -1,6 +1,6 @@
 <template>
   <section class="flex flex-col xl:flex-row xl:gap-4 justify-center items-start mt-8">
-    <BaseTag class="mt-7 cursor-pointer" @click="goBack"
+    <BaseTag class="mt-7 cursor-pointer underline underline-offset-4 decoration-dark-lighter" @click="goBack"
       ><svg class="h-[1.1cap]" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
           fill-rule="evenodd"

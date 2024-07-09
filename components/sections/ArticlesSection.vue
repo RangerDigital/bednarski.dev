@@ -33,7 +33,7 @@
           <h3 class="font-headings text-4xl font-semibold">{{ activeArticle.title }}</h3>
           <p class="mt-4">{{ activeArticle.description }}</p>
 
-          <div class="flex flex-row gap-2 mt-6">
+          <div class="flex flex-row gap-2 mt-6 flex-wrap">
             <BaseTag v-for="tag in activeArticle.tags" :key="tag"> {{ tag }}</BaseTag>
           </div>
         </div>
