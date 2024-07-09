@@ -19,7 +19,7 @@
 
 <style>
   .markdown h1 {
-    @apply text-4xl font-semibold font-headings mt-4 leading-relaxed;
+    @apply text-4xl font-semibold font-headings mt-4 leading-snug;
   }
 
   .markdown h2 {

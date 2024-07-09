@@ -7,11 +7,14 @@
     <textarea
       :value="modelValue"
       rows="8"
+      :maxlength="maxlength"
       :placeholder="placeholder"
       class="w-full rounded border border-dark-lighter bg-dark text-white px-5 py-3 focus:ring-primary focus:border-primary placeholder:text-dark-lighter transition-all duration-200 ease-in-out"
       :class="{ '!border-primary': error }"
       @input="$emit('update:modelValue', $event.target.value)"
     ></textarea>
+
+    <p v-if="counter" class="text-sm text-right text-white mt-2">{{ counterText }}</p>
 
     <span v-if="error" class="text-red-500 text-sm mt-2">{{ error }}</span>
   </div>
@@ -22,6 +25,12 @@
 
   export default defineComponent({
     name: 'BaseInput',
+
+    computed: {
+      counterText() {
+        return `${this.modelValue.length}/${this.maxlength}`;
+      },
+    },
 
     props: {
       label: {
@@ -43,6 +52,14 @@
       error: {
         type: String,
         default: '',
+      },
+      counter: {
+        type: Boolean,
+        default: false,
+      },
+      maxlength: {
+        type: Number,
+        default: 1000,
       },
     },
   });

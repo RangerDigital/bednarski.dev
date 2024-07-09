@@ -1,6 +1,6 @@
 <template>
   <section class="my-12 flex flex-col flex-nowrap items-center">
-    <BaseHeader subtitle="Content Section">My Articles</BaseHeader>
+    <BaseHeader subtitle="Articles Section">Insights & Expertise</BaseHeader>
 
     <div
       class="flex flex-col xl:flex-row gap-8 xl:gap-28 justify-center mt-8 flex-nowrap w-full h-[650px] xl:h-auto"
@@ -30,7 +30,7 @@
         <div class="w-full max-w-sm animate-fade-in-right" :key="activeArticle._id" :class="{ '!animate-fade-out-right': runAnimation }">
           <p class="opacity-50 text-sm mb-2 mt-4"> {{ formatDate(activeArticle.date) }} </p>
 
-          <h3 class="font-headings text-4xl font-semibold">{{ activeArticle.title }}</h3>
+          <h3 class="font-headings text-4xl font-semibold leading-snug">{{ activeArticle.title }}</h3>
           <p class="mt-4">{{ activeArticle.description }}</p>
 
           <div class="flex flex-row gap-2 mt-6 flex-wrap">

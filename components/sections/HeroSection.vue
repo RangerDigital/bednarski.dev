@@ -79,7 +79,7 @@
 
         <p class="max-w-prose xl:text-center mt-6 leading-7 xl:mt-14 whitespace-break-spaces">
           <span class="text-primary underline underline-offset-4">Jakub Bednarski, Full-Stack Design Engineer</span> who loves building and breaking visually pleasing web apps and
-          internet of things products.<br class="xl:hidden" /><br />Enthusiast of Porsche cars, Tailwind, Nest.js, MongoDB, Vue.js, DevOps tools and Open Source software.</p
+          internet of things products.<br class="xl:hidden" /><br />Enthusiast of Porsche, Tailwind, Nest.js, Vue.js and Open Source software.</p
         >
 
         <div class="flex flex-row gap-4 justify-center flex-wrap mt-2 max-w-2xl">
@@ -174,7 +174,7 @@
           </BaseTag>
         </div>
 
-        <BaseButton @click="scrollTo('#contact-form')" class="mt-10 xl:mt-14 anime-hero-item">Connect with Me</BaseButton>
+        <BaseButton @click="scrollTo('#contact-form')" class="mt-10 xl:mt-14 anime-hero-item">Let's Create Something Extraordinary</BaseButton>
       </div>
     </section>
   </section>

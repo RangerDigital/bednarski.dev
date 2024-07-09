@@ -1,6 +1,6 @@
 <template>
   <section class="my-12 flex flex-col flex-nowrap">
-    <BaseHeader subtitle="Professional Services">Services</BaseHeader>
+    <BaseHeader subtitle="Professional Services">How I Can Elevate Your Project</BaseHeader>
 
     <div class="flex flex-row flex-wrap gap-4 xl:gap-8 justify-center mt-6">
       <BaseCard title="Full-Stack Web Development">

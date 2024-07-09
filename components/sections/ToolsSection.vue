@@ -1,6 +1,6 @@
 <template>
   <section class="my-12 flex flex-col flex-nowrap">
-    <BaseHeader subtitle="Tools Section">Tools & Software</BaseHeader>
+    <BaseHeader subtitle="Tools & Software"> My Tech Arsenal</BaseHeader>
 
     <div class="flex xl:flex-row flex-col xl:flex-wrap gap-0 xl:gap-4 justify-center mt-6">
       <img src="/img/vue-uwu.png" alt="Vue.js Logo" class="xl:w-1/5 flex-shrink-0 -rotate-12" />
@@ -12,8 +12,7 @@
 
     <div class="flex flex-row flex-wrap gap-4 justify-center mt-6">
       <p class="max-w-prose xl:text-center">
-        I continually explore and adopt new tools and software to enhance my project development and workflow efficiency.<br class="xl:hidden" /><br />Here are some of the
-        technologies I use on a daily basis:
+        Staying at the cutting edge, I constantly integrate innovative tools to supercharge development and maximize efficiency. My daily tech stack includes:
       </p>
     </div>
 

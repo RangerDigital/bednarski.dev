@@ -3,11 +3,11 @@
     <BaseHeader subtitle="Having a great idea to share?">Send Me a Message</BaseHeader>
 
     <form @submit.prevent="submitForm()" class="flex flex-col gap-2 xl:gap-4 justify-center mt-6 items-center w-full" v-if="!showSuccess">
-      <BaseInput v-model="form.name" label="Your Name" placeholder="eg. John Doe" class="max-w-lg" :error="formErrors.name" />
+      <BaseInput v-model="form.name" label="Your Name" placeholder="eg. John Doe" class="max-w-lg" :error="formErrors.name" autocomplete="name" />
 
-      <BaseInput v-model="form.email" label="Your E-Mail" placeholder="eg. jakub@example.com" class="max-w-lg" :error="formErrors.email" />
+      <BaseInput v-model="form.email" label="Your E-Mail" placeholder="eg. jakub@example.com" type="email" autocomplete="email" class="max-w-lg" :error="formErrors.email" />
 
-      <BaseTextArea v-model="form.message" label="Message" placeholder="Type your message here..." class="max-w-lg mt-4" :error="formErrors.message" />
+      <BaseTextArea v-model="form.message" label="Message" placeholder="Type your message here..." class="max-w-lg mt-4" :error="formErrors.message" counter max-length="1000" />
 
       <BaseButton :disabled="isPending" type="submit" class="w-full mt-8 mb-4" @click="submitForm()"> Send Message </BaseButton>
     </form>
