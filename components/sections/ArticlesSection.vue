@@ -27,7 +27,12 @@
           ></div>
         </div>
 
-        <div class="w-full max-w-sm animate-fade-in-right" :key="activeArticle._id" :class="{ '!animate-fade-out-right': runAnimation }">
+        <div
+          class="w-full max-w-sm animate-fade-in-right cursor-pointer"
+          :key="activeArticle._id"
+          :class="{ '!animate-fade-out-right': runAnimation }"
+          @click="$router.push(activeArticle._path)"
+        >
           <p class="opacity-50 text-sm mb-2 mt-4"> {{ formatDate(activeArticle.date) }} </p>
 
           <h3 class="font-headings text-4xl font-semibold leading-snug">{{ activeArticle.title }}</h3>
