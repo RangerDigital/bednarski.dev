@@ -14,6 +14,7 @@ export default defineNuxtConfig({
   routeRules: {
     '/x': { redirect: { to: 'https://x.com/rangesaur', statusCode: 301 } },
     '/github': { redirect: { to: 'https://github.com/RangerDigital', statusCode: 301 } },
+    '/sponsor': { redirect: { to: 'https://ostrowiec.praca.gov.pl/', statusCode: 301 } },
   },
 
   modules: ['nuxt-svgo', '@nuxtjs/sitemap', '@nuxt/content', 'nuxt-simple-robots'],
