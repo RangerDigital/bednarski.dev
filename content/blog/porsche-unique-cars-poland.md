@@ -1,5 +1,5 @@
 ---
-title: My First Unique Cars Poland Event: Showcasing My Porsche 718 in Lublin
+title: My First Unique Cars Poland Event - Showcasing My Porsche 718 in Lublin
 description: A thrilling day at the Unique Cars Poland event, capturing the beauty of my Porsche 718.
 date: 2024-10-21
 tags:
