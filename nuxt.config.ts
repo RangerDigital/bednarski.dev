@@ -38,6 +38,13 @@ export default defineNuxtConfig({
         content: 'Jakub Bednarski is a Full-Stack Design Engineer based in Rzeszów, Poland.',
       },
     ],
+    script: [
+      {
+        src: 'https://umami.bednarski.dev/script.js',
+        defer: true,
+        'data-website-id': '950e9ed9-1090-486e-84a0-420058729335',
+      },
+    ],
   },
   content: {
     documentDriven: true,
