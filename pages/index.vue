@@ -27,17 +27,5 @@
       ToolsSection,
       ServicesSection,
     },
-
-    created() {
-      useHead({
-        title: 'Jakub Bednarski | Full-Stack Design Engineer',
-        meta: [
-          {
-            name: 'description',
-            content: 'Jakub Bednarski is a Full-Stack Design Engineer based in Rzeszów, Poland.',
-          },
-        ],
-      });
-    },
   });
 </script>

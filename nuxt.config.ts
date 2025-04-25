@@ -27,24 +27,26 @@ export default defineNuxtConfig({
     },
   },
 
-  head: {
-    title: 'Jakub Bednarski | Full-Stack Design Engineer',
-    meta: [
-      { charset: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      {
-        hid: 'description',
-        name: 'description',
-        content: 'Jakub Bednarski is a Full-Stack Design Engineer based in Rzeszów, Poland.',
-      },
-    ],
-    script: [
-      {
-        src: 'https://umami.bednarski.dev/script.js',
-        defer: true,
-        'data-website-id': '950e9ed9-1090-486e-84a0-420058729335',
-      },
-    ],
+  app: {
+    head: {
+      title: 'Jakub Bednarski | Full-Stack Design Engineer',
+      meta: [
+        { charset: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        {
+          hid: 'description',
+          name: 'description',
+          content: 'Jakub Bednarski is a Full-Stack Design Engineer based in Rzeszów, Poland.',
+        },
+      ],
+      script: [
+        {
+          src: 'https://umami.bednarski.dev/script.js',
+          defer: true,
+          'data-website-id': '950e9ed9-1090-486e-84a0-420058729335',
+        },
+      ],
+    },
   },
   content: {
     documentDriven: true,
