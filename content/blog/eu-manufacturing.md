@@ -1,5 +1,5 @@
 ---
-title: Is EU Manufacturing Really on Life Support? My One-Off Lathe Saga
+title: Is EU Manufacturing Really on Life Support?
 description: How the search for a single tool-steel sleeve turned into a guided tour of everything wrong with European prototyping.
 date: 2025-08-06
 tags:

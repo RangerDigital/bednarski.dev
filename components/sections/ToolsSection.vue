@@ -12,12 +12,12 @@
 
     <div class="flex flex-row flex-wrap gap-4 justify-center mt-6">
       <p class="max-w-prose xl:text-center">
-        Staying at the cutting edge, I constantly integrate innovative tools to supercharge development and maximize efficiency. My daily tech stack includes:
+        I keep one foot in tomorrow, weaving the freshest tools into every project to boost velocity and polish. Here’s the gear I reach for daily:
       </p>
     </div>
 
     <div class="flex flex-row justify-center">
-      <div class="flex flex-row flex-wrap gap-2 xl:gap-3 justify-center mt-6 max-w-3xl">
+      <div class="flex flex-row flex-wrap gap-2 xl:gap-3 justify-center mt-6 max-w-4xl">
         <BaseTag> Vue.js</BaseTag>
         <BaseTag> Nuxt.js</BaseTag>
         <BaseTag> Tailwind CSS</BaseTag>
@@ -35,6 +35,11 @@
         <BaseTag> VS Code</BaseTag>
       </div>
     </div>
+
+    <section class="flex flex-col xl:flex-row gap-4 items-center justify-center mt-6 xl:mt-14">
+      <GitHubCard repository="senko" owner="RangerDigital" />
+      <GitHubCard repository="neko-box" owner="RangerDigital" />
+    </section>
   </section>
 </template>
 

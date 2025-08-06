@@ -77,9 +77,9 @@
           >.</h1
         >
 
-        <p class="max-w-prose xl:text-center mt-6 leading-7 xl:mt-14 whitespace-break-spaces">
-          <span class="text-primary underline underline-offset-4">Jakub Bednarski, Full-Stack Design Engineer</span> who loves building and breaking visually pleasing web apps and
-          internet of things products.<br class="xl:hidden" /><br />Enthusiast of Porsche, Tailwind, Nest.js, Vue.js and Open Source software.</p
+        <p class="max-w-2xl xl:text-center mt-6 leading-7 xl:mt-14 whitespace-break-spaces">
+          <span class="text-primary underline underline-offset-4">I’m Jakub Bednarski, a full-stack design engineer</span> who loves building and occasionally breaking visually
+          striking web apps and IoT products. At the crossroads of design and code, I merge pixel-perfect aesthetics with robust engineering.</p
         >
 
         <div class="flex flex-row gap-4 justify-center flex-wrap mt-2 max-w-2xl">
