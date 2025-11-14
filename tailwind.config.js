@@ -49,12 +49,20 @@ export default {
             transform: 'rotate(360deg)',
           },
         },
+        'flicker': {
+          '0%, 100%': { opacity: '1' },
+          '25%': { opacity: '0' },
+          '50%': { opacity: '0.4' },
+          '75%': { opacity: '0' },
+          '50%': { opacity: '0.6' },
+        },
       },
 
       animation: {
         'fade-in-right': 'fade-in-right 0.25s ease-in-out',
         'fade-out-right': 'fade-out-right 0.25s ease-in-out forwards',
         'spin-slow': 'spin 3s linear infinite',
+        'flicker': 'flicker 0.5s linear infinite',
       },
     
       colors: {
