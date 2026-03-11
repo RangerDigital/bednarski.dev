@@ -1,334 +1,420 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#070707">
-  <title>NS Panel</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: #070707;
-      color: #ededed;
-      position: fixed;
-      inset: 0;
-      overflow: hidden;
-      touch-action: manipulation;
-    }
-
-    .container {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      padding: 12px;
-    }
-
-    /* Scan lines */
-    .scan::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,255,0.012) 2px, rgba(0,255,255,0.012) 4px);
-      pointer-events: none;
-      z-index: 999;
-    }
-
-    /* Header */
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 10px;
-      border-bottom: 1px solid rgba(0,255,255,0.2);
-      flex-shrink: 0;
-    }
-
-    .logo {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #0ff;
-      text-shadow: 0 0 8px rgba(0,255,255,0.6);
-      letter-spacing: 0.15em;
-    }
-
-    .time {
-      font-family: monospace;
-      font-size: 0.8rem;
-      color: rgba(255,255,255,0.6);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .dot {
-      width: 6px;
-      height: 6px;
-      background: #0f8;
-      border-radius: 50%;
-      box-shadow: 0 0 6px #0f8;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-
-    /* Controls */
-    main {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 1fr 1.4fr;
-      gap: 12px;
-      padding: 12px 0;
-      min-height: 0;
-    }
-
-    .left {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    /* Buttons */
-    .btn {
-      flex: 1;
-      position: relative;
-      border: 2px solid;
-      border-radius: 8px;
-      background: #141315;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: transform 50ms, box-shadow 150ms, border-color 150ms;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-
-    .btn:active { transform: scale(0.97); }
-
-    .btn svg {
-      width: 32px;
-      height: 32px;
-      stroke-width: 2;
-      fill: none;
-      transition: filter 150ms;
-    }
-
-    .btn .label {
-      font-size: 0.9rem;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-    }
-
-    .btn .status {
-      font-size: 0.55rem;
-      letter-spacing: 0.15em;
-      opacity: 0.5;
-      transition: opacity 150ms, color 150ms;
-    }
-
-    .btn.on .status { opacity: 1; }
-
-    /* Lock - Cyan */
-    #lock {
-      border-color: rgba(0,255,255,0.25);
-      color: #0ff;
-    }
-    #lock svg { stroke: #0ff; filter: drop-shadow(0 0 3px rgba(0,255,255,0.4)); }
-    #lock.on {
-      border-color: #0ff;
-      box-shadow: 0 0 20px rgba(0,255,255,0.3), inset 0 0 15px rgba(0,255,255,0.08);
-    }
-    #lock.on .status { color: #0ff; }
-
-    /* Light - Amber */
-    #light {
-      border-color: rgba(255,200,0,0.25);
-      color: #fc0;
-    }
-    #light svg { stroke: #fc0; filter: drop-shadow(0 0 3px rgba(255,200,0,0.4)); }
-    #light.on {
-      border-color: #fc0;
-      box-shadow: 0 0 20px rgba(255,200,0,0.3), inset 0 0 15px rgba(255,200,0,0.08);
-    }
-    #light.on svg { animation: glow 1.2s infinite; }
-    #light.on .status { color: #fc0; }
-
-    @keyframes glow {
-      0%, 100% { filter: drop-shadow(0 0 3px rgba(255,200,0,0.4)); }
-      50% { filter: drop-shadow(0 0 10px rgba(255,200,0,0.9)); }
-    }
-
-    /* Door - Magenta */
-    #door {
-      border-color: rgba(255,0,127,0.25);
-      color: #f07;
-    }
-    #door svg { stroke: #f07; filter: drop-shadow(0 0 3px rgba(255,0,127,0.4)); width: 44px; height: 44px; }
-    #door .label { font-size: 1.3rem; }
-    #door .sub { font-size: 0.65rem; opacity: 0.4; letter-spacing: 0.1em; margin-top: -2px; }
-    #door.on {
-      border-color: #f07;
-      box-shadow: 0 0 25px rgba(255,0,127,0.4), inset 0 0 20px rgba(255,0,127,0.1);
-    }
-
-    .progress {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      height: 3px;
-      width: 0;
-      background: linear-gradient(90deg, #f07, #f0f);
-      box-shadow: 0 0 8px #f07;
-      transition: width 40ms linear;
-    }
-
-    /* Footer */
-    footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-top: 10px;
-      border-top: 1px solid rgba(0,255,255,0.2);
-      flex-shrink: 0;
-    }
-
-    .latency {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .latency span:first-child {
-      font-size: 0.55rem;
-      letter-spacing: 0.1em;
-      opacity: 0.4;
-    }
-
-    .latency .val {
-      font-family: monospace;
-      font-size: 0.95rem;
-      font-weight: 600;
-    }
-
-    .val.g1 { color: #0f8; text-shadow: 0 0 6px rgba(0,255,136,0.5); }
-    .val.g2 { color: #0ff; text-shadow: 0 0 6px rgba(0,255,255,0.5); }
-    .val.g3 { color: #fc0; text-shadow: 0 0 6px rgba(255,200,0,0.5); }
-    .val.g4 { color: #f07; text-shadow: 0 0 6px rgba(255,0,127,0.5); }
-
-    .count {
-      font-family: monospace;
-      font-size: 0.7rem;
-      opacity: 0.4;
-    }
-  </style>
-</head>
-<body class="scan">
-  <div class="container">
-    <header>
-      <div class="logo">NS-PANEL</div>
-      <div class="time"><span class="dot"></span><span id="clock">00:00:00</span></div>
-    </header>
-
-    <main>
-      <div class="left">
-        <button class="btn" id="lock">
-          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-          <span class="label">LOCK</span>
-          <span class="status" id="lockS">UNLOCKED</span>
-        </button>
-        <button class="btn" id="light">
-          <svg viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0018 8a6 6 0 00-12 0c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 018.91 14"/></svg>
-          <span class="label">LIGHT</span>
-          <span class="status" id="lightS">OFF</span>
-        </button>
-      </div>
-      <button class="btn" id="door">
-        <svg viewBox="0 0 24 24"><path d="M3 21V5a2 2 0 012-2h9a2 2 0 012 2v16"/><path d="M21 21H3"/><path d="M9 12h.01"/></svg>
-        <span class="label">OPEN</span>
-        <span class="sub">DOOR ACCESS</span>
-        <div class="progress" id="prog"></div>
-      </button>
-    </main>
-
-    <footer>
-      <div class="latency"><span>LATENCY</span><span class="val g1" id="lat">0ms</span></div>
-      <div class="count">TAPS: <span id="cnt">0</span></div>
-    </footer>
-  </div>
-
-  <script>
-    const $ = id => document.getElementById(id);
-    const lock = $('lock'), light = $('light'), door = $('door');
-    const lockS = $('lockS'), lightS = $('lightS');
-    const lat = $('lat'), cnt = $('cnt'), prog = $('prog'), clock = $('clock');
-    
-    let count = 0, t0 = 0;
-
-    // Clock
-    const tick = () => {
-      const d = new Date();
-      clock.textContent = d.toTimeString().slice(0,8);
-    };
-    tick(); setInterval(tick, 1000);
-
-    // Latency display
-    const showLat = ms => {
-      lat.textContent = ms + 'ms';
-      lat.className = 'val ' + (ms < 50 ? 'g1' : ms < 100 ? 'g2' : ms < 200 ? 'g3' : 'g4');
-      cnt.textContent = ++count;
-    };
-
-    // Touch handlers for accurate timing
-    const tap = (el, fn) => {
-      el.addEventListener('touchstart', e => { e.preventDefault(); t0 = performance.now(); }, { passive: false });
-      el.addEventListener('touchend', e => { e.preventDefault(); showLat(Math.round(performance.now() - t0)); fn(); }, { passive: false });
-      el.addEventListener('click', e => {
-        if (!t0) { t0 = performance.now(); }
-        showLat(Math.round(performance.now() - t0));
-        t0 = 0;
-        fn();
-      });
-    };
-
-    // Lock toggle
-    tap(lock, () => {
-      lock.classList.toggle('on');
-      lockS.textContent = lock.classList.contains('on') ? 'SECURED' : 'UNLOCKED';
-    });
-
-    // Light toggle
-    tap(light, () => {
-      light.classList.toggle('on');
-      lightS.textContent = light.classList.contains('on') ? 'ON' : 'OFF';
-    });
-
-    // Door open with progress
-    let doorBusy = false;
-    tap(door, () => {
-      if (doorBusy) return;
-      doorBusy = true;
-      let p = 0;
-      const iv = setInterval(() => {
-        p += 10;
-        prog.style.width = p + '%';
-        if (p >= 100) {
-          clearInterval(iv);
-          door.classList.add('on');
-          setTimeout(() => {
-            door.classList.remove('on');
-            prog.style.width = '0';
-            doorBusy = false;
-          }, 2500);
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#070707">
+    <title>NS Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
-      }, 40);
-    });
-  </script>
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #070707;
+            color: #ededed;
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 12px;
+        }
+
+        /* Scan lines */
+        .scan::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 255, 0.012) 2px, rgba(0, 255, 255, 0.012) 4px);
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+            flex-shrink: 0;
+        }
+
+        .logo {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #0ff;
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+            letter-spacing: 0.15em;
+        }
+
+        .time {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            background: #0f8;
+            border-radius: 50%;
+            box-shadow: 0 0 6px #0f8;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        /* Controls */
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1.4fr;
+            gap: 12px;
+            padding: 12px 0;
+            min-height: 0;
+        }
+
+        .left {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Buttons */
+        .btn {
+            flex: 1;
+            position: relative;
+            border: 2px solid;
+            border-radius: 8px;
+            background: #141315;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: transform 50ms, box-shadow 150ms, border-color 150ms;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn svg {
+            width: 32px;
+            height: 32px;
+            stroke-width: 2;
+            fill: none;
+            transition: filter 150ms;
+        }
+
+        .btn .label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+        }
+
+        .btn .status {
+            font-size: 0.55rem;
+            letter-spacing: 0.15em;
+            opacity: 0.5;
+            transition: opacity 150ms, color 150ms;
+        }
+
+        .btn.on .status {
+            opacity: 1;
+        }
+
+        /* Lock - Cyan */
+        #lock {
+            border-color: rgba(0, 255, 255, 0.25);
+            color: #0ff;
+        }
+
+        #lock svg {
+            stroke: #0ff;
+            filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.4));
+        }
+
+        #lock.on {
+            border-color: #0ff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 15px rgba(0, 255, 255, 0.08);
+        }
+
+        #lock.on .status {
+            color: #0ff;
+        }
+
+        /* Light - Amber */
+        #light {
+            border-color: rgba(255, 200, 0, 0.25);
+            color: #fc0;
+        }
+
+        #light svg {
+            stroke: #fc0;
+            filter: drop-shadow(0 0 3px rgba(255, 200, 0, 0.4));
+        }
+
+        #light.on {
+            border-color: #fc0;
+            box-shadow: 0 0 20px rgba(255, 200, 0, 0.3), inset 0 0 15px rgba(255, 200, 0, 0.08);
+        }
+
+        #light.on svg {
+            animation: glow 1.2s infinite;
+        }
+
+        #light.on .status {
+            color: #fc0;
+        }
+
+        @keyframes glow {
+
+            0%,
+            100% {
+                filter: drop-shadow(0 0 3px rgba(255, 200, 0, 0.4));
+            }
+
+            50% {
+                filter: drop-shadow(0 0 10px rgba(255, 200, 0, 0.9));
+            }
+        }
+
+        /* Door - Magenta */
+        #door {
+            border-color: rgba(255, 0, 127, 0.25);
+            color: #f07;
+        }
+
+        #door svg {
+            stroke: #f07;
+            filter: drop-shadow(0 0 3px rgba(255, 0, 127, 0.4));
+            width: 44px;
+            height: 44px;
+        }
+
+        #door .label {
+            font-size: 1.3rem;
+        }
+
+        #door .sub {
+            font-size: 0.65rem;
+            opacity: 0.4;
+            letter-spacing: 0.1em;
+            margin-top: -2px;
+        }
+
+        #door.on {
+            border-color: #f07;
+            box-shadow: 0 0 25px rgba(255, 0, 127, 0.4), inset 0 0 20px rgba(255, 0, 127, 0.1);
+        }
+
+        .progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            width: 0;
+            background: linear-gradient(90deg, #f07, #f0f);
+            box-shadow: 0 0 8px #f07;
+            transition: width 40ms linear;
+        }
+
+        /* Footer */
+        footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 10px;
+            border-top: 1px solid rgba(0, 255, 255, 0.2);
+            flex-shrink: 0;
+        }
+
+        .latency {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .latency span:first-child {
+            font-size: 0.55rem;
+            letter-spacing: 0.1em;
+            opacity: 0.4;
+        }
+
+        .latency .val {
+            font-family: monospace;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .val.g1 {
+            color: #0f8;
+            text-shadow: 0 0 6px rgba(0, 255, 136, 0.5);
+        }
+
+        .val.g2 {
+            color: #0ff;
+            text-shadow: 0 0 6px rgba(0, 255, 255, 0.5);
+        }
+
+        .val.g3 {
+            color: #fc0;
+            text-shadow: 0 0 6px rgba(255, 200, 0, 0.5);
+        }
+
+        .val.g4 {
+            color: #f07;
+            text-shadow: 0 0 6px rgba(255, 0, 127, 0.5);
+        }
+
+        .count {
+            font-family: monospace;
+            font-size: 0.7rem;
+            opacity: 0.4;
+        }
+    </style>
+</head>
+
+<body class="scan">
+    <div class="container">
+        <header>
+            <div class="logo">NS-PANEL</div>
+            <div class="time"><span class="dot"></span><span id="clock">00:00:00</span></div>
+        </header>
+
+        <main>
+            <div class="left">
+                <button class="btn" id="lock">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="3" y="11" width="18" height="11" rx="2" />
+                        <path d="M7 11V7a5 5 0 0110 0v4" />
+                    </svg>
+                    <span class="label">LOCK</span>
+                    <span class="status" id="lockS">UNLOCKED</span>
+                </button>
+                <button class="btn" id="light">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M9 18h6M10 22h4M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0018 8a6 6 0 00-12 0c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 018.91 14" />
+                    </svg>
+                    <span class="label">LIGHT</span>
+                    <span class="status" id="lightS">OFF</span>
+                </button>
+            </div>
+            <button class="btn" id="door">
+                <svg viewBox="0 0 24 24">
+                    <path d="M3 21V5a2 2 0 012-2h9a2 2 0 012 2v16" />
+                    <path d="M21 21H3" />
+                    <path d="M9 12h.01" />
+                </svg>
+                <span class="label">OPEN</span>
+                <span class="sub">DOOR ACCESS</span>
+                <div class="progress" id="prog"></div>
+            </button>
+        </main>
+
+        <footer>
+            <div class="latency"><span>LATENCY</span><span class="val g1" id="lat">0ms</span></div>
+            <div class="count">TAPS: <span id="cnt">0</span></div>
+        </footer>
+    </div>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        const lock = $('lock'), light = $('light'), door = $('door');
+        const lockS = $('lockS'), lightS = $('lightS');
+        const lat = $('lat'), cnt = $('cnt'), prog = $('prog'), clock = $('clock');
+
+        let count = 0, t0 = 0;
+
+        // Clock
+        const tick = () => {
+            const d = new Date();
+            clock.textContent = d.toTimeString().slice(0, 8);
+        };
+        tick(); setInterval(tick, 1000);
+
+        // Latency display
+        const showLat = ms => {
+            lat.textContent = ms + 'ms';
+            lat.className = 'val ' + (ms < 50 ? 'g1' : ms < 100 ? 'g2' : ms < 200 ? 'g3' : 'g4');
+            cnt.textContent = ++count;
+        };
+
+        // Touch handlers for accurate timing
+        const tap = (el, fn) => {
+            el.addEventListener('touchstart', e => { e.preventDefault(); t0 = performance.now(); }, { passive: false });
+            el.addEventListener('touchend', e => { e.preventDefault(); showLat(Math.round(performance.now() - t0)); fn(); }, { passive: false });
+            el.addEventListener('click', e => {
+                if (!t0) { t0 = performance.now(); }
+                showLat(Math.round(performance.now() - t0));
+                t0 = 0;
+                fn();
+            });
+        };
+
+        // Lock toggle
+        tap(lock, () => {
+            lock.classList.toggle('on');
+            lockS.textContent = lock.classList.contains('on') ? 'SECURED' : 'UNLOCKED';
+        });
+
+        // Light toggle
+        tap(light, () => {
+            light.classList.toggle('on');
+            lightS.textContent = light.classList.contains('on') ? 'ON' : 'OFF';
+        });
+
+        // Door open with progress
+        let doorBusy = false;
+        tap(door, () => {
+            if (doorBusy) return;
+            doorBusy = true;
+            let p = 0;
+            const iv = setInterval(() => {
+                p += 10;
+                prog.style.width = p + '%';
+                if (p >= 100) {
+                    clearInterval(iv);
+                    door.classList.add('on');
+                    setTimeout(() => {
+                        door.classList.remove('on');
+                        prog.style.width = '0';
+                        doorBusy = false;
+                    }, 2500);
+                }
+            }, 40);
+        });
+    </script>
 </body>
+
 </html>
