@@ -4,6 +4,11 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   css: ['~/assets/css/main.css'],
 
+  // pages/ is scanned for every JS/TS extension, so keep the DIN engine modules
+  // (core.mjs, worker.mjs, test/) out of the route scanner. They are imported
+  // normally by pages/din/index.vue and its geometry worker.
+  ignore: ['pages/din/**/*.mjs'],
+
   postcss: {
     plugins: {
       tailwindcss: {},

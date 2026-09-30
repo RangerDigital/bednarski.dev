@@ -1,0 +1,16 @@
+{
+  "name": "din-mount-core",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Parametric DIN rail mount geometry and binary STL export, used by pages/din",
+  "main": "core.mjs",
+  "exports": "./core.mjs",
+  "scripts": {
+    "test": "node --test test/core.test.mjs test/snap.test.mjs"
+  },
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "manifold-3d": "3.5.4"
+  }
+}
