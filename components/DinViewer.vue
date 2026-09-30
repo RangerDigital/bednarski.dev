@@ -19,30 +19,19 @@
       <button type="button" :class="toolButton" @click="frame">Reset view</button>
     </div>
 
-    <div v-if="invalid" class="absolute top-3 right-3 rounded-full border border-primary bg-dark/90 px-3 py-1 text-[11px] text-primary">
-      Invalid configuration
-    </div>
+    <div v-if="invalid" class="absolute top-3 right-3 rounded-full border border-primary bg-dark/90 px-3 py-1 text-[11px] text-primary"> Invalid configuration </div>
 
-    <div
-      v-else-if="busy"
-      class="absolute top-3 right-3 rounded-full border border-dark-lighter bg-dark/80 px-3 py-1 text-[11px] text-white/60"
-    >
-      Regenerating&hellip;
-    </div>
+    <div v-else-if="busy" class="absolute top-3 right-3 rounded-full border border-dark-lighter bg-dark/80 px-3 py-1 text-[11px] text-white/60"> Regenerating&hellip; </div>
 
     <div v-if="failed" class="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
       <p class="font-headings text-sm text-primary">3D preview unavailable</p>
       <p class="max-w-sm text-xs leading-snug text-white/50">{{ failed }}</p>
-      <p class="max-w-sm text-xs leading-snug text-white/35">
-        Parameters, validation, warnings and STL download still work without WebGL.
-      </p>
+      <p class="max-w-sm text-xs leading-snug text-white/35"> Parameters, validation, warnings and STL download still work without WebGL. </p>
     </div>
 
     <div v-else-if="!model" class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
       <p class="font-headings text-sm text-white/70">{{ status }}</p>
-      <p class="max-w-sm text-xs leading-snug text-white/35">
-        Runs in a Web Worker in your browser. Nothing is uploaded.
-      </p>
+      <p class="max-w-sm text-xs leading-snug text-white/35"> Runs in a Web Worker in your browser. Nothing is uploaded. </p>
     </div>
 
     <div class="pointer-events-none absolute bottom-3 left-3 flex flex-col gap-1 text-[10px] uppercase tracking-wider text-white/40">
@@ -110,8 +99,9 @@
   let resizeObserver = null;
   let frameHandle = 0;
   let needsRender = true;
+  let framed = false;
 
-  const colorFor = (name) => (name === 'main' ? COLOR_MAIN : COLOR_JAW);
+  const colorFor = (partName) => (partName === 'main' ? COLOR_MAIN : COLOR_JAW);
 
   function requestRender() {
     needsRender = true;
@@ -123,9 +113,9 @@
     geometry.setIndex(new THREE.BufferAttribute(part.mesh.indices, 1));
 
     // Non-indexed + face normals keeps the machined look crisp on flat faces.
-    const flat = geometry.toNonIndexed();
+    const flatGeometry = geometry.toNonIndexed();
     geometry.dispose();
-    flat.computeVertexNormals();
+    flatGeometry.computeVertexNormals();
 
     const material = new THREE.MeshStandardMaterial({
       color,
@@ -136,7 +126,7 @@
       opacity: options.opacity ?? 1,
     });
 
-    return new THREE.Mesh(flat, material);
+    return new THREE.Mesh(flatGeometry, material);
   }
 
   function clearGroup(group) {
@@ -148,11 +138,11 @@
     }
   }
 
-  function frameBox(box) {
-    if (!box || box.isEmpty() || !camera) return;
+  function frameBox(bounds) {
+    if (!bounds || bounds.isEmpty() || !camera) return;
 
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
+    const center = bounds.getCenter(new THREE.Vector3());
+    const size = bounds.getSize(new THREE.Vector3());
     const radius = Math.max(size.length() * 0.5, 15);
     const distance = (radius / Math.sin((camera.fov * Math.PI) / 180 / 2)) * 1.15;
 
@@ -180,11 +170,11 @@
       return;
     }
 
-    const box = new THREE.Box3();
+    const bounds = new THREE.Box3();
     for (const part of model.parts ?? []) {
       const mesh = buildMesh(part, colorFor(part.name));
       partsGroup.add(mesh);
-      box.expandByObject(mesh);
+      bounds.expandByObject(mesh);
     }
 
     // The reference rail is preview-only and must never be exported.
@@ -193,7 +183,11 @@
       railGroup.add(buildMesh(model.reference, COLOR_RAIL, { metalness: 0.55, roughness: 0.42, transparent: true, opacity: 0.9 }));
     }
 
-    frameBox(box);
+    // Frame once: regenerating must not drag the camera away from the view you set up.
+    if (!framed && !bounds.isEmpty()) {
+      frameBox(bounds);
+      framed = true;
+    }
   }
 
   function resize() {
@@ -214,8 +208,8 @@
 
   function frame() {
     if (!partsGroup || !controls) return;
-    const box = new THREE.Box3().setFromObject(partsGroup);
-    frameBox(box);
+    const bounds = new THREE.Box3().setFromObject(partsGroup);
+    frameBox(bounds);
   }
 
   function loop() {
@@ -299,6 +293,6 @@
     (value) => {
       if (railGroup) railGroup.visible = value;
       requestRender();
-    }
+    },
   );
 </script>

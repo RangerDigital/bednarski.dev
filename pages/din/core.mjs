@@ -4,6 +4,7 @@ import ManifoldModule from 'manifold-3d';
 export const VERSION = '1.0.0';
 export const DEFAULTS = Object.freeze({
   width: 90, height: 66, plateThickness: 4, cornerRadius: 3,
+  lightening: false, slotWidth: 4, ribWidth: 2,
   pattern: 'rectangle', pitchX: 70, pitchY: 44, holeDiameter: 3.4,
   standoffHeight: 6, standoffWall: 2, holes: [],
   railWidth: 35, railHeight: 7.5, flangeThickness: 1,
@@ -26,6 +27,7 @@ export const PRESETS = Object.freeze({
 export const LIMITS = Object.freeze({
   snapBladeThickness:[0.8,2], snapFreeLength:[18,36],
   width:[32,300], height:[62,300], plateThickness:[3,12], cornerRadius:[0,12],
+  slotWidth:[2.5,8], ribWidth:[1.2,4],
   pitchX:[1,280], pitchY:[1,280], holeDiameter:[2,8], standoffHeight:[0,30],
   standoffWall:[1.5,6], railWidth:[34,36], railHeight:[7.5,15],
   flangeThickness:[0.8,2], fitClearance:[0.1,0.8], hookOverlap:[1,3],
@@ -35,295 +37,653 @@ export const LIMITS = Object.freeze({
 export class ParameterError extends Error {
   constructor(errors) { super(errors.join('\n')); this.name='ParameterError'; this.errors=errors; }
 }
-const own = (o,k) => Object.prototype.hasOwnProperty.call(o,k);
-const segment = h => {
-  const n = ((h.slotLength ?? h.diameter) - h.diameter)/2;
-  return h.slotAxis === 'y' ? [[h.x,h.y-n],[h.x,h.y+n]] : [[h.x-n,h.y],[h.x+n,h.y]];
+const ownsParameter = (parameterSet, key) => Object.prototype.hasOwnProperty.call(parameterSet, key);
+
+/** Centreline of a hole or slot, as [start, end] points in the plate's XY plane. */
+const holeSegment = (hole) => {
+  const halfSlot = ((hole.slotLength ?? hole.diameter) - hole.diameter) / 2;
+  return hole.slotAxis === 'y'
+    ? [[hole.x, hole.y - halfSlot], [hole.x, hole.y + halfSlot]]
+    : [[hole.x - halfSlot, hole.y], [hole.x + halfSlot, hole.y]];
 };
-// Exact segment distance in 2D, for round/slot footprint collision checks.
-function segmentDistance(a,b,c,d) {
-  const point = (p,u,v) => { const dx=v[0]-u[0],dy=v[1]-u[1];
-    const t=Math.max(0,Math.min(1,((p[0]-u[0])*dx+(p[1]-u[1])*dy)/(dx*dx+dy*dy||1)));
-    return Math.hypot(p[0]-u[0]-t*dx,p[1]-u[1]-t*dy); };
-  const cross=(p,q,r)=>(q[0]-p[0])*(r[1]-p[1])-(q[1]-p[1])*(r[0]-p[0]);
-  if (cross(a,b,c)*cross(a,b,d)<0 && cross(c,d,a)*cross(c,d,b)<0) return 0;
-  return Math.min(point(a,c,d),point(b,c,d),point(c,a,b),point(d,a,b));
+
+/** Exact 2D distance between two segments, used for round and slotted footprint clashes. */
+function segmentDistance(startA, endA, startB, endB) {
+  const distanceToSegment = (point, start, end) => {
+    const spanX = end[0] - start[0];
+    const spanY = end[1] - start[1];
+    const projection = Math.max(0, Math.min(1, ((point[0] - start[0]) * spanX + (point[1] - start[1]) * spanY) / (spanX * spanX + spanY * spanY || 1)));
+    return Math.hypot(point[0] - start[0] - projection * spanX, point[1] - start[1] - projection * spanY);
+  };
+  const cross = (origin, first, second) => (first[0] - origin[0]) * (second[1] - origin[1]) - (first[1] - origin[1]) * (second[0] - origin[0]);
+  if (cross(startA, endA, startB) * cross(startA, endA, endB) < 0 && cross(startB, endB, startA) * cross(startB, endB, endA) < 0) return 0;
+  return Math.min(
+    distanceToSegment(startA, startB, endB),
+    distanceToSegment(endA, startB, endB),
+    distanceToSegment(startB, startA, endA),
+    distanceToSegment(endB, startA, endA),
+  );
 }
-export function normalizeParameters(input={}) {
-  if (!input || typeof input!=='object' || Array.isArray(input)) throw new ParameterError(['Parameters must be an object.']);
-  const errors=[]; const p={...DEFAULTS,...input};
-  for (const k of Object.keys(input)) if (!own(DEFAULTS,k)) errors.push(`Unknown parameter: ${k}`);
-  for (const [k,[lo,hi]] of Object.entries(LIMITS))
-    if (typeof p[k]!=='number' || !Number.isFinite(p[k]) || p[k]<lo || p[k]>hi) errors.push(`${k}: expected a number from ${lo} to ${hi} mm (segments is a count).`);
-  if (!['screw','snap'].includes(p.retention)) errors.push("retention must be 'screw' or 'snap'.");
-  if (![1,2].includes(p.clipCount)) errors.push('clipCount must be 1 or 2.');
-  if (!Number.isInteger(p.segments)) errors.push('segments must be an integer.');
-  if (![7.5,15].includes(p.railHeight)) errors.push('railHeight must be 7.5 or 15.');
-  if (!['rectangle','line-x','line-y','custom'].includes(p.pattern)) errors.push('Unknown hole pattern.');
-  if (!Array.isArray(p.holes) || p.holes.length>32) errors.push('holes must be an array with at most 32 entries.');
-  if (errors.length) throw new ParameterError(errors);
-  const coords=p.pattern==='rectangle' ? [[-p.pitchX/2,-p.pitchY/2],[p.pitchX/2,-p.pitchY/2],[-p.pitchX/2,p.pitchY/2],[p.pitchX/2,p.pitchY/2]]
-    :p.pattern==='line-x' ? [[-p.pitchX/2,0],[p.pitchX/2,0]] :p.pattern==='line-y' ? [[0,-p.pitchY/2],[0,p.pitchY/2]] : null;
-  const holes=coords ? coords.map(([x,y])=>({x,y,diameter:p.holeDiameter})) : p.holes.map(h=>h && typeof h==='object' ? {...h} : {});
-  holes.forEach((h,i)=>{
-    for(const k of Object.keys(h)) if(!['x','y','diameter','slotLength','slotAxis','standoffHeight'].includes(k)) errors.push(`Hole ${i+1}: unknown field ${k}.`);
-    h.diameter ??= p.holeDiameter; h.slotLength ??= h.diameter; h.slotAxis ??= 'x'; h.standoffHeight ??= p.standoffHeight;
-    if(![h.x,h.y,h.diameter,h.slotLength,h.standoffHeight].every(Number.isFinite) || h.diameter<2 || h.diameter>8 || h.slotLength<h.diameter || h.slotLength>80 || h.standoffHeight<0 || h.standoffHeight>30 || !['x','y'].includes(h.slotAxis)) errors.push(`Hole ${i+1}: invalid coordinates, diameter, slot, or standoff height.`);
-  });
-  if(errors.length) throw new ParameterError(errors);
-  const centers=p.clipCount===1 ? [0] : [-p.clipSpacing/2,p.clipSpacing/2];
-  const railHalf=p.railWidth/2, screwY=railHalf+6.5, jawOuter=railHalf+11.5;
-  const fixedOuter=railHalf+p.fitClearance+4;
-  const gap=p.flangeThickness+p.fitClearance;
-  const snap=p.retention==='snap';
-  let snapGeometry=null;
-  if(snap){
-    const thickness=p.snapBladeThickness, length=p.snapFreeLength;
-    const radius=Math.max(1.2,thickness), anchorLength=4, headLength=4;
-    const bladeInner=railHalf+p.fitClearance;
-    const travel=p.hookOverlap+p.fitClearance;
-    // Fixed 45-degree insertion ramp. XY flexure, bending toward +Y.
-    const rampHeight=travel, depth=Math.max(4,rampHeight+0.4);
-    const span=anchorLength+radius+length+headLength;
-    const rootStart=-span/2, anchorEnd=rootStart+anchorLength;
-    const freeStart=anchorEnd+radius, headStart=freeStart+length;
-    const releaseOuter=p.height/2+4; // accessible beyond +Y plate edge
-    const tabReach=releaseOuter-bladeInner-thickness;
-    const strain=1.5*thickness*travel/(length*length);
-    // Conservative screening allowance, NOT a proven FDM stress concentration factor.
-    const screenedStrain=2*strain;
-    const slope=1.5*travel/length;
-    const sweptXAllowance=tabReach*Math.sin(Math.atan(slope))+1;
-    if(screenedStrain>0.03) errors.push('Snap strain screen exceeds 3%; increase snapFreeLength or reduce snapBladeThickness / hookOverlap.');
-    if(tabReach>35) errors.push('Snap release tab would reach over 35 mm; reduce plate height (or redesign release access).');
-    if(centers.some(x=>Math.abs(x)+span/2+1>p.width/2)) errors.push('Snap flexure extends beyond plate X edges; increase width or reduce snapFreeLength / clipSpacing.');
-    if(p.clipCount===2 && p.clipSpacing<span+sweptXAllowance+1) errors.push('Snap stations lack clearance for the moving release tabs; increase clipSpacing.');
-    if(bladeInner+thickness+radius+1>p.height/2-p.cornerRadius) errors.push('Insufficient plate support above snap root; increase height or reduce cornerRadius.');
-    if(gap+depth>p.railHeight+p.fitClearance/2-0.2) errors.push('Snap blade extends behind the schematic rail mounting plane; use deeper rail or reduce flange / overlap / clearance.');
-    // Simplified beam load at x=L; a head-end force has a longer lever arm.
-    const forceAtE=E=>E*depth*thickness**3*travel/(4*length**3);
-    snapGeometry={thickness,length,radius,anchorLength,headLength,bladeInner,travel,
-      rampHeight,depth,span,rootStart,anchorEnd,freeStart,headStart,releaseOuter,
-      tabReach,strain,screenedStrain,sweptXAllowance,
-      releaseForceEstimateN:[forceAtE(1200),forceAtE(2200)],
-      modulusAssumptionMPa:[1200,2200],rampAngleToInsertionDeg:45,
-      printZShift:Math.max(p.hookDepth,gap+depth)};
+const MAX_LIGHTENING_SLOT_LENGTH = 22; // mm; longer free runs are split so the ribs stay evenly spaced
+
+/**
+ * Plan for the rounded-slot plate lightening, in the plate's XY plane. Pure 2D geometry, no CSG:
+ * slots run along X, so every print orientation builds them as channels open on both plate faces.
+ * Each entry is one slot: its centre, its row Y and its overall length.
+ */
+export function lighteningSlots(configuration) {
+  const { parameters, holes, stationCenters, isSnap, snapGeometry, railHalfWidth, barOuterY, hookOuterY } = configuration;
+  if (!parameters.lightening) return [];
+
+  const { slotWidth, ribWidth, cornerRadius, height, width } = parameters;
+  const halfSlotWidth = slotWidth / 2;
+  const border = Math.max(2.5, ribWidth);
+  const minimumRunLength = slotWidth + 4;
+
+  // Half-width of the rounded plate outline at a given |acrossRail|, so the rows follow the corners.
+  const plateHalfWidthAt = (acrossRail) => {
+    const pastCorner = Math.abs(acrossRail) - (height / 2 - cornerRadius);
+    return pastCorner <= 0 ? width / 2 : width / 2 - cornerRadius + Math.sqrt(Math.max(0, cornerRadius * cornerRadius - pastCorner * pastCorner));
+  };
+
+  // Rectangles that must stay solid: bores and bosses, the hook, the retaining bar or snap root.
+  const keepOuts = [];
+  const reserve = (minX, minY, maxX, maxY) => keepOuts.push({ minX, maxX, minY, maxY });
+
+  for (const hole of holes) {
+    const [start, end] = holeSegment(hole);
+    // A screw head needs a seating face on plain bores; a bossed hole needs its own wall kept.
+    const margin = hole.standoffHeight > 0
+      ? hole.diameter / 2 + parameters.standoffWall
+      : hole.diameter / 2 + Math.max(3.2, ribWidth);
+    reserve(
+      Math.min(start[0], end[0]) - margin, Math.min(start[1], end[1]) - margin,
+      Math.max(start[0], end[0]) + margin, Math.max(start[1], end[1]) + margin,
+    );
   }
-  if(p.hookDepth-gap<2.5) errors.push('hookDepth must leave at least 2.5 mm below the rail flange gap.');
-  if(!snap && p.hookDepth-p.nutDepth<2.4) errors.push('Retaining bar must leave at least 2.4 mm above the nut pocket.');
-  if(p.cornerRadius>Math.min(p.width,p.height)/4) errors.push('cornerRadius is too large.');
-  if(!snap && p.height/2<jawOuter+1.5) errors.push(`height must be at least ${2*(jawOuter+1.5)} mm.`);
-  if(p.clipCount===2 && p.clipSpacing<p.clipWidth+4) errors.push('Clips need at least 4 mm separation.');
-  if(centers.some(x=>Math.abs(x)+p.clipWidth/2>p.width/2-2)) errors.push('Clip extends too close to a plate side; increase width or reduce clip spacing/width.');
-  const screws=snap?[]:centers.flatMap(x=>[-1,1].map(s=>({x:x+s*(p.clipWidth/2-6),y:screwY,diameter:p.clampHoleDiameter})));
-  const headRadius=3.2; // reserve M3 socket head + a little tool clearance
-  holes.forEach((h,i)=>{
-    const [a,b]=segment(h),r=h.diameter/2+(h.standoffHeight>0?p.standoffWall:1.5);
-    // Conservative inset box avoids rounded-corner clipping too.
-    if(Math.max(Math.abs(a[0]),Math.abs(b[0]))+r>p.width/2-p.cornerRadius || Math.max(Math.abs(a[1]),Math.abs(b[1]))+r>p.height/2-p.cornerRadius) errors.push(`Hole ${i+1}: insufficient plate edge / corner clearance.`);
-    for(const s of screws) if(segmentDistance(a,b,[s.x,s.y],[s.x,s.y])<r+headRadius+0.5) errors.push(`Hole ${i+1}: overlaps clamp screw/head clearance. Move the hole or clip.`);
-    // Hole drills must not weaken the fixed hook or concealed jaw contact region.
-    for(const x of centers){
-      const ranges=snap?[[-fixedOuter,-railHalf+p.hookOverlap]]:[[-fixedOuter,-railHalf+p.hookOverlap],[railHalf-p.hookOverlap,jawOuter]];
-      for(const [y0,y1] of ranges){
-        const minX=Math.min(a[0],b[0])-h.diameter/2-1.5,maxX=Math.max(a[0],b[0])+h.diameter/2+1.5;
-        const minY=Math.min(a[1],b[1])-h.diameter/2-1.5,maxY=Math.max(a[1],b[1])+h.diameter/2+1.5;
-        if(maxX>x-p.clipWidth/2 && minX<x+p.clipWidth/2 && maxY>y0 && minY<y1) errors.push(`Hole ${i+1}: too close to a rail hook / retaining bar footprint. Move hole or clip.`);
+
+  for (const stationCenterX of stationCenters) {
+    const minX = stationCenterX - parameters.clipWidth / 2 - ribWidth;
+    const maxX = stationCenterX + parameters.clipWidth / 2 + ribWidth;
+    // Retaining bar, its clamp screw seats and (snap) the root shoulder, all beside the rail.
+    reserve(minX, railHalfWidth - ribWidth, maxX, barOuterY + ribWidth);
+    // The fixed hook only ever sits on the negative Y side.
+    reserve(minX, -hookOuterY - ribWidth, maxX, -railHalfWidth + ribWidth);
+    // Snap: keep the head and release tab clear so the plate still backs the moving part.
+    if (isSnap && snapGeometry) {
+      reserve(
+        stationCenterX + snapGeometry.rootStart - ribWidth, railHalfWidth - ribWidth,
+        stationCenterX + snapGeometry.rootStart + snapGeometry.span + ribWidth, height / 2,
+      );
+    }
+  }
+
+  const slots = [];
+  const halfPatternHeight = height / 2 - border - halfSlotWidth;
+  const rowPitch = slotWidth + ribWidth;
+  const rowCount = Math.floor((2 * halfPatternHeight) / rowPitch) + 1;
+  if (rowCount < 1) return slots;
+
+  const firstRowY = -((rowCount - 1) * rowPitch) / 2;
+  for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+    const rowY = firstRowY + rowIndex * rowPitch;
+    const halfRun = plateHalfWidthAt(Math.abs(rowY) + halfSlotWidth) - border;
+    if (halfRun <= 0) continue;
+
+    let freeRuns = [[-halfRun, halfRun]];
+    for (const keepOut of keepOuts) {
+      if (rowY + halfSlotWidth <= keepOut.minY || rowY - halfSlotWidth >= keepOut.maxY) continue;
+      const remainingRuns = [];
+      for (const [runStart, runEnd] of freeRuns) {
+        if (keepOut.maxX <= runStart || keepOut.minX >= runEnd) {
+          remainingRuns.push([runStart, runEnd]);
+          continue;
+        }
+        if (keepOut.minX > runStart) remainingRuns.push([runStart, keepOut.minX]);
+        if (keepOut.maxX < runEnd) remainingRuns.push([keepOut.maxX, runEnd]);
+      }
+      freeRuns = remainingRuns;
+    }
+
+    for (const [runStart, runEnd] of freeRuns) {
+      const runLength = runEnd - runStart;
+      if (runLength < minimumRunLength) continue;
+      const slotCount = Math.max(1, Math.ceil((runLength + ribWidth) / (MAX_LIGHTENING_SLOT_LENGTH + ribWidth)));
+      const slotLength = (runLength - (slotCount - 1) * ribWidth) / slotCount;
+      for (let slotIndex = 0; slotIndex < slotCount; slotIndex += 1) {
+        slots.push({ x: runStart + slotIndex * (slotLength + ribWidth) + slotLength / 2, y: rowY, length: slotLength });
       }
     }
-    if(snap){
-      const d=snapGeometry;
-      for(const x of centers){
-        const minX=Math.min(a[0],b[0])-h.diameter/2-1.5,maxX=Math.max(a[0],b[0])+h.diameter/2+1.5;
-        const minY=Math.min(a[1],b[1])-h.diameter/2-1.5,maxY=Math.max(a[1],b[1])+h.diameter/2+1.5;
+  }
+  return slots;
+}
+export function normalizeParameters(input = {}) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) throw new ParameterError(['Parameters must be an object.']);
+
+  const errors = [];
+  const parameters = { ...DEFAULTS, ...input };
+
+  for (const key of Object.keys(input)) if (!ownsParameter(DEFAULTS, key)) errors.push(`Unknown parameter: ${key}`);
+  for (const [key, [minimum, maximum]] of Object.entries(LIMITS)) {
+    const value = parameters[key];
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < minimum || value > maximum) {
+      errors.push(`${key}: expected a number from ${minimum} to ${maximum} mm (segments is a count).`);
+    }
+  }
+  if (!['screw', 'snap'].includes(parameters.retention)) errors.push("retention must be 'screw' or 'snap'.");
+  if (typeof parameters.lightening !== 'boolean') errors.push('lightening must be true or false.');
+  if (![1, 2].includes(parameters.clipCount)) errors.push('clipCount must be 1 or 2.');
+  if (!Number.isInteger(parameters.segments)) errors.push('segments must be an integer.');
+  if (![7.5, 15].includes(parameters.railHeight)) errors.push('railHeight must be 7.5 or 15.');
+  if (!['rectangle', 'line-x', 'line-y', 'custom'].includes(parameters.pattern)) errors.push('Unknown hole pattern.');
+  if (!Array.isArray(parameters.holes) || parameters.holes.length > 32) errors.push('holes must be an array with at most 32 entries.');
+  if (errors.length) throw new ParameterError(errors);
+
+  const patternPositions = parameters.pattern === 'rectangle'
+    ? [[-parameters.pitchX / 2, -parameters.pitchY / 2], [parameters.pitchX / 2, -parameters.pitchY / 2], [-parameters.pitchX / 2, parameters.pitchY / 2], [parameters.pitchX / 2, parameters.pitchY / 2]]
+    : parameters.pattern === 'line-x' ? [[-parameters.pitchX / 2, 0], [parameters.pitchX / 2, 0]]
+    : parameters.pattern === 'line-y' ? [[0, -parameters.pitchY / 2], [0, parameters.pitchY / 2]]
+    : null;
+
+  const holes = patternPositions
+    ? patternPositions.map(([holeX, holeY]) => ({ x: holeX, y: holeY, diameter: parameters.holeDiameter }))
+    : parameters.holes.map((hole) => (hole && typeof hole === 'object' ? { ...hole } : {}));
+
+  holes.forEach((hole, index) => {
+    for (const key of Object.keys(hole)) {
+      if (!['x', 'y', 'diameter', 'slotLength', 'slotAxis', 'standoffHeight'].includes(key)) errors.push(`Hole ${index + 1}: unknown field ${key}.`);
+    }
+    hole.diameter ??= parameters.holeDiameter;
+    hole.slotLength ??= hole.diameter;
+    hole.slotAxis ??= 'x';
+    hole.standoffHeight ??= parameters.standoffHeight;
+    const coordinatesFinite = [hole.x, hole.y, hole.diameter, hole.slotLength, hole.standoffHeight].every(Number.isFinite);
+    const sizesInRange = hole.diameter >= 2 && hole.diameter <= 8
+      && hole.slotLength >= hole.diameter && hole.slotLength <= 80
+      && hole.standoffHeight >= 0 && hole.standoffHeight <= 30
+      && ['x', 'y'].includes(hole.slotAxis);
+    if (!coordinatesFinite || !sizesInRange) errors.push(`Hole ${index + 1}: invalid coordinates, diameter, slot, or standoff height.`);
+  });
+  if (errors.length) throw new ParameterError(errors);
+  const stationCenters = parameters.clipCount === 1 ? [0] : [-parameters.clipSpacing / 2, parameters.clipSpacing / 2];
+  const railHalfWidth = parameters.railWidth / 2;
+  const clampScrewY = railHalfWidth + 6.5;
+  const barOuterY = railHalfWidth + 11.5;
+  const hookOuterY = railHalfWidth + parameters.fitClearance + 4;
+  const flangeGap = parameters.flangeThickness + parameters.fitClearance;
+  const isSnap = parameters.retention === 'snap';
+  let snapGeometry = null;
+
+  if (isSnap) {
+    const bladeThickness = parameters.snapBladeThickness;
+    const freeLength = parameters.snapFreeLength;
+    const rootRadius = Math.max(1.2, bladeThickness);
+    const anchorLength = 4;
+    const headLength = 4;
+    const bladeInnerY = railHalfWidth + parameters.fitClearance;
+    const travel = parameters.hookOverlap + parameters.fitClearance;
+    // Fixed 45 degree insertion ramp; the beam flexes in XY, bending toward +Y.
+    const rampHeight = travel;
+    const bladeDepth = Math.max(4, rampHeight + 0.4);
+    const span = anchorLength + rootRadius + freeLength + headLength;
+    const rootStart = -span / 2;
+    const anchorEnd = rootStart + anchorLength;
+    const freeStart = anchorEnd + rootRadius;
+    const headStart = freeStart + freeLength;
+    const releaseOuterY = parameters.height / 2 + 4; // reachable beyond the +Y plate edge
+    const tabReach = releaseOuterY - bladeInnerY - bladeThickness;
+    const strain = (1.5 * bladeThickness * travel) / (freeLength * freeLength);
+    // Conservative screening allowance, not a proven FDM stress concentration factor.
+    const screenedStrain = 2 * strain;
+    const slope = (1.5 * travel) / freeLength;
+    const sweptXAllowance = tabReach * Math.sin(Math.atan(slope)) + 1;
+
+    if (screenedStrain > 0.03) errors.push('Snap strain screen exceeds 3%; increase snapFreeLength or reduce snapBladeThickness / hookOverlap.');
+    if (tabReach > 35) errors.push('Snap release tab would reach over 35 mm; reduce plate height (or redesign release access).');
+    if (stationCenters.some((centerX) => Math.abs(centerX) + span / 2 + 1 > parameters.width / 2)) {
+      errors.push('Snap flexure extends beyond plate X edges; increase width or reduce snapFreeLength / clipSpacing.');
+    }
+    if (parameters.clipCount === 2 && parameters.clipSpacing < span + sweptXAllowance + 1) {
+      errors.push('Snap stations lack clearance for the moving release tabs; increase clipSpacing.');
+    }
+    if (bladeInnerY + bladeThickness + rootRadius + 1 > parameters.height / 2 - parameters.cornerRadius) {
+      errors.push('Insufficient plate support above snap root; increase height or reduce cornerRadius.');
+    }
+    if (flangeGap + bladeDepth > parameters.railHeight + parameters.fitClearance / 2 - 0.2) {
+      errors.push('Snap blade extends behind the schematic rail mounting plane; use deeper rail or reduce flange / overlap / clearance.');
+    }
+
+    // Simplified beam load at the free end; a head-end force has a longer lever arm.
+    const releaseForceAt = (modulusMPa) => (modulusMPa * bladeDepth * bladeThickness ** 3 * travel) / (4 * freeLength ** 3);
+    snapGeometry = {
+      thickness: bladeThickness, length: freeLength, radius: rootRadius, anchorLength, headLength,
+      bladeInner: bladeInnerY, travel, rampHeight, depth: bladeDepth, span, rootStart, anchorEnd,
+      freeStart, headStart, releaseOuter: releaseOuterY, tabReach, strain, screenedStrain, sweptXAllowance,
+      releaseForceEstimateN: [releaseForceAt(1200), releaseForceAt(2200)],
+      modulusAssumptionMPa: [1200, 2200],
+      rampAngleToInsertionDeg: 45,
+      printZShift: Math.max(parameters.hookDepth, flangeGap + bladeDepth),
+    };
+  }
+  if (parameters.hookDepth - flangeGap < 2.5) errors.push('hookDepth must leave at least 2.5 mm below the rail flange gap.');
+  if (!isSnap && parameters.hookDepth - parameters.nutDepth < 2.4) errors.push('Retaining bar must leave at least 2.4 mm above the nut pocket.');
+  if (parameters.cornerRadius > Math.min(parameters.width, parameters.height) / 4) errors.push('cornerRadius is too large.');
+  if (!isSnap && parameters.height / 2 < barOuterY + 1.5) errors.push(`height must be at least ${2 * (barOuterY + 1.5)} mm.`);
+  if (parameters.clipCount === 2 && parameters.clipSpacing < parameters.clipWidth + 4) errors.push('Clips need at least 4 mm separation.');
+  if (stationCenters.some((centerX) => Math.abs(centerX) + parameters.clipWidth / 2 > parameters.width / 2 - 2)) {
+    errors.push('Clip extends too close to a plate side; increase width or reduce clip spacing/width.');
+  }
+
+  const clampScrewHoles = isSnap
+    ? []
+    : stationCenters.flatMap((centerX) => [-1, 1].map((side) => ({
+      x: centerX + side * (parameters.clipWidth / 2 - 6),
+      y: clampScrewY,
+      diameter: parameters.clampHoleDiameter,
+    })));
+  const screwHeadClearance = 3.2; // M3 socket head plus a little tool clearance
+
+  holes.forEach((hole, index) => {
+    const [start, end] = holeSegment(hole);
+    const footprintRadius = hole.diameter / 2 + (hole.standoffHeight > 0 ? parameters.standoffWall : 1.5);
+    const minX = Math.min(start[0], end[0]) - hole.diameter / 2 - 1.5;
+    const maxX = Math.max(start[0], end[0]) + hole.diameter / 2 + 1.5;
+    const minY = Math.min(start[1], end[1]) - hole.diameter / 2 - 1.5;
+    const maxY = Math.max(start[1], end[1]) + hole.diameter / 2 + 1.5;
+
+    // Conservative inset box, so the footprint cannot clip a rounded corner either.
+    if (Math.max(Math.abs(start[0]), Math.abs(end[0])) + footprintRadius > parameters.width / 2 - parameters.cornerRadius
+      || Math.max(Math.abs(start[1]), Math.abs(end[1])) + footprintRadius > parameters.height / 2 - parameters.cornerRadius) {
+      errors.push(`Hole ${index + 1}: insufficient plate edge / corner clearance.`);
+    }
+
+    for (const screw of clampScrewHoles) {
+      if (segmentDistance(start, end, [screw.x, screw.y], [screw.x, screw.y]) < footprintRadius + screwHeadClearance + 0.5) {
+        errors.push(`Hole ${index + 1}: overlaps clamp screw/head clearance. Move the hole or clip.`);
+      }
+    }
+
+    // A drill must not weaken the fixed hook or the concealed retaining bar contact region.
+    for (const centerX of stationCenters) {
+      const stationBands = isSnap
+        ? [[-hookOuterY, -railHalfWidth + parameters.hookOverlap]]
+        : [[-hookOuterY, -railHalfWidth + parameters.hookOverlap], [railHalfWidth - parameters.hookOverlap, barOuterY]];
+      for (const [bandMinY, bandMaxY] of stationBands) {
+        if (maxX > centerX - parameters.clipWidth / 2 && minX < centerX + parameters.clipWidth / 2 && maxY > bandMinY && minY < bandMaxY) {
+          errors.push(`Hole ${index + 1}: too close to a rail hook / retaining bar footprint. Move hole or clip.`);
+        }
+      }
+    }
+
+    if (isSnap && snapGeometry) {
+      for (const centerX of stationCenters) {
         // Only the anchor reaches the plate; do not reserve a fictitious full-width jaw.
-        if(maxX>x+d.rootStart && minX<x+d.anchorEnd && maxY>d.bladeInner && minY<d.bladeInner+d.thickness+d.radius)
-          errors.push(`Hole ${i+1}: too close to the snap anchor. Move hole or clip.`);
+        if (maxX > centerX + snapGeometry.rootStart && minX < centerX + snapGeometry.anchorEnd
+          && maxY > snapGeometry.bladeInner && minY < snapGeometry.bladeInner + snapGeometry.thickness + snapGeometry.radius) {
+          errors.push(`Hole ${index + 1}: too close to the snap anchor. Move hole or clip.`);
+        }
       }
     }
-    for(let j=0;j<i;j++){
-      const q=holes[j], [c,d]=segment(q),rq=q.diameter/2+(q.standoffHeight>0?p.standoffWall:0);
-      if(segmentDistance(a,b,c,d)<r+rq+1) errors.push(`Holes ${j+1} and ${i+1}: insufficient separation.`);
+
+    for (let previousIndex = 0; previousIndex < index; previousIndex += 1) {
+      const previousHole = holes[previousIndex];
+      const [previousStart, previousEnd] = holeSegment(previousHole);
+      const previousFootprintRadius = previousHole.diameter / 2 + (previousHole.standoffHeight > 0 ? parameters.standoffWall : 0);
+      if (segmentDistance(start, end, previousStart, previousEnd) < footprintRadius + previousFootprintRadius + 1) {
+        errors.push(`Holes ${previousIndex + 1} and ${index + 1}: insufficient separation.`);
+      }
     }
   });
-  if(errors.length) throw new ParameterError([...new Set(errors)]);
-  return { parameters:p, holes, centers, screws, gap, railHalf, screwY, jawOuter, fixedOuter, snap, snapGeometry };
+  if (errors.length) throw new ParameterError([...new Set(errors)]);
+
+  return {
+    parameters,
+    holes,
+    stationCenters,
+    clampScrewHoles,
+    flangeGap,
+    railHalfWidth,
+    clampScrewY,
+    barOuterY,
+    hookOuterY,
+    isSnap,
+    snapGeometry,
+  };
 }
 
-/** Initialize once. Supply { locateFile: name => wasmURL } in a browser bundler. */
-export async function createGenerator(wasmOptions={}) {
-  const wasm=await ManifoldModule(wasmOptions); wasm.setup();
-  const {Manifold:M,CrossSection:CS}=wasm;
-  return {generate};
-  function generate(input={}) {
-    const n=normalizeParameters(input),{parameters:p,holes,centers,screws,gap,railHalf,jawOuter,fixedOuter,snap,snapGeometry}=n;
-    const objects=[]; const keep=o=>(objects.push(o),o);
-    const moved=(o,v)=>keep(o.translate(v));
-    const box=(x,y,z,w,h,d)=>moved(keep(M.cube([w,h,d])),[x,y,z]);
-    const cyl=(x,y,z,d,h,segments=p.segments)=>moved(keep(M.cylinder(h,d/2,d/2,segments)),[x,y,z]);
-    const union=a=>a.length===1?a[0]:keep(M.union(a));
-    const subtract=(a,b)=>keep(a.subtract(union(b)));
-    const capsule=(h,wall,z,depth)=>{
-      const [a,b]=segment(h),d=h.diameter+wall*2;
-      if(h.slotLength===h.diameter) return cyl(h.x,h.y,z,d,depth);
-      return union([cyl(...a,z,d,depth),cyl(...b,z,d,depth),
-        h.slotAxis==='x'?box(a[0],h.y-d/2,z,b[0]-a[0],d,depth):box(h.x-d/2,a[1],z,d,b[1]-a[1],depth)]);
-    };
-    try {
-      let plate;
-      if(p.cornerRadius===0) plate=box(-p.width/2,-p.height/2,0,p.width,p.height,p.plateThickness);
-      else {
-        const path=[],r=p.cornerRadius;
-        for(let q=0;q<4;q++){
-          const cx=(q===0||q===3?1:-1)*(p.width/2-r), cy=(q<2?1:-1)*(p.height/2-r);
-          for(let i=0;i<=12;i++){const a=(q*90+i*90/12)*Math.PI/180;path.push([cx+r*Math.cos(a),cy+r*Math.sin(a)]);}
-        }
-        plate=keep(keep(new CS([path])).extrude(p.plateThickness));
-      }
-      const solids=[plate];
-      for(const h of holes) if(h.standoffHeight>0) solids.push(capsule(h,p.standoffWall,p.plateThickness-0.02,h.standoffHeight+0.02));
-      for(const x of centers){
-        solids.push(box(x-p.clipWidth/2,-fixedOuter,-p.hookDepth,p.clipWidth,fixedOuter-railHalf-p.fitClearance,p.hookDepth+0.02));
-        solids.push(box(x-p.clipWidth/2,-fixedOuter,-p.hookDepth,p.clipWidth,fixedOuter-railHalf+p.hookOverlap,p.hookDepth-gap));
-      }
-      if(snap) for(const x of centers){
-        const d=snapGeometry, b=d.bladeInner, t=d.thickness, r=d.radius;
-        const z=-gap-d.depth;
-        // Root block alone reaches the plate. Positive overlap is intentional here only.
-        solids.push(box(x+d.rootStart,b,z,d.anchorLength,t+r,d.depth+gap+0.02));
-        // Wider root shoulder below flange level, with both XY root fillets.
-        solids.push(box(x+d.rootStart,b-r,z,d.anchorLength+0.02,t+2*r,d.depth));
-        solids.push(box(x+d.anchorEnd-0.02,b,z,r+d.length+d.headLength+0.02,t,d.depth));
-        for(const side of [-1,1]){
-          const edge=side<0?b:b+t, cy=edge+side*r;
-          const path=[[x+d.anchorEnd-0.02,edge-side*0.02],[x+d.anchorEnd-0.02,cy]];
-          for(let i=1;i<=16;i++){
-            const a=(180+(side<0?-1:1)*90*i/16)*Math.PI/180;
-            path.push([x+d.freeStart+r*Math.cos(a),cy+r*Math.sin(a)]);
-          }
-          // final arc point is (freeStart, edge); closes onto straight blade edge.
-          path.push([x+d.freeStart,edge-side*0.02]);
-          if(side>0) path.reverse();
-          solids.push(moved(keep(keep(new CS([path])).extrude(d.depth)),[0,0,z]));
-        }
-        // Triangle in YZ extruded along +X: local [u,v,w] -> [w,u,v].
-        // Upper outer flange corner rides the diagonal as rail moves +Z relative to mount.
-        const toothSection=keep(new CS([[ [railHalf-p.hookOverlap,-gap], [b+0.02,-gap-d.rampHeight], [b+0.02,-gap] ]]));
-        const tooth=keep(toothSection.extrude(d.headLength));
-        solids.push(moved(keep(tooth.rotate([90,0,90])),[x+d.headStart,0,0]));
-        // Release ledge belongs to the FREE HEAD, never to the fixed root.
-        // Pull outward (+Y); this directly bends the XY blade, with no deep return leg.
-        solids.push(box(x+d.headStart,b+t-0.02,-gap-2,d.headLength,d.releaseOuter-b-t+0.02,2));
-      }
-      // Snap holes stop just below plate, so a drill never cuts a free blade/tab under it.
-      const cuts=holes.map(h=>snap ? capsule(h,0,-0.02,p.plateThickness+h.standoffHeight+1) : capsule(h,0,-p.hookDepth-1,p.hookDepth+p.plateThickness+h.standoffHeight+2));
-      for(const s of screws) cuts.push(cyl(s.x,s.y,-1,p.clampHoleDiameter,p.plateThickness+2));
-      const rawMain=snap && cuts.length===0?union(solids):subtract(union(solids),cuts);
-      // Snap-only cleanup prevents sub-micron CSG slivers collapsing in Float32 STL.
-      let main=rawMain;
-      if(snap){
-        const mesh=rawMain.getMesh();
-        const rounded=keep(new M({numProp:mesh.numProp,vertProperties:Float32Array.from(mesh.vertProperties),triVerts:mesh.triVerts,mergeFromVert:mesh.mergeFromVert,mergeToVert:mesh.mergeToVert}));
-        main=keep(keep(rounded.asOriginal()).setTolerance(0.0001));
-      }
-      const parts=[pack('main',main,1)];
-      const jaws=[];
-      if(!snap) centers.forEach((x,i)=>{
-        const a=box(x-p.clipWidth/2,railHalf+p.fitClearance,-p.hookDepth,p.clipWidth,jawOuter-railHalf-p.fitClearance,p.hookDepth);
-        const lip=box(x-p.clipWidth/2,railHalf-p.hookOverlap,-p.hookDepth,p.clipWidth,jawOuter-railHalf+p.hookOverlap,p.hookDepth-gap);
-        const jawCuts=[];
-        for(const s of screws.slice(i*2,i*2+2)) {
-          jawCuts.push(cyl(s.x,s.y,-p.hookDepth-1,p.clampHoleDiameter,p.hookDepth+2));
-          jawCuts.push(cyl(s.x,s.y,-p.hookDepth-0.02,2*p.nutAcrossFlats/Math.sqrt(3),p.nutDepth+0.02,6));
-        }
-        const jaw=subtract(union([a,lip]),jawCuts); jaws.push(jaw);
-        parts.push(pack(`jaw-${i+1}`,jaw,1));
-      });
-      // Dimensionally illustrative reference rail. Not a fabrication/export part.
-      const t=p.flangeThickness,top=-p.fitClearance/2,railLength=p.width+30,web=24;
-      const rail=union([
-        box(-railLength/2,-web/2,top-p.railHeight,railLength,web,t),
-        box(-railLength/2,-web/2,top-p.railHeight,railLength,t,p.railHeight),
-        box(-railLength/2,web/2-t,top-p.railHeight,railLength,t,p.railHeight),
-        box(-railLength/2,-railHalf,top-t,railLength,railHalf-web/2+t,t),
-        box(-railLength/2,web/2-t,top-t,railLength,railHalf-web/2+t,t),
+/** Initialize once. Supply { locateFile: name => wasmUrl } in a browser bundler. */
+export async function createGenerator(wasmOptions = {}) {
+  const wasm = await ManifoldModule(wasmOptions);
+  wasm.setup();
+  const { Manifold, CrossSection } = wasm;
+
+  return { generate };
+
+  function generate(input = {}) {
+    const configuration = normalizeParameters(input);
+    const { parameters, holes, stationCenters, clampScrewHoles, flangeGap, railHalfWidth, barOuterY, hookOuterY, isSnap, snapGeometry } = configuration;
+    const slots = lighteningSlots(configuration);
+
+    // Manifold objects hold WASM memory, so every one created here is released in the finally block.
+    const disposables = [];
+    const retain = (manifoldObject) => (disposables.push(manifoldObject), manifoldObject);
+    const translated = (manifoldObject, offset) => retain(manifoldObject.translate(offset));
+    const box = (minX, minY, minZ, width, height, depth) => translated(retain(Manifold.cube([width, height, depth])), [minX, minY, minZ]);
+    const cylinder = (centerX, centerY, baseZ, diameter, height, facetCount = parameters.segments) =>
+      translated(retain(Manifold.cylinder(height, diameter / 2, diameter / 2, facetCount)), [centerX, centerY, baseZ]);
+    const union = (shapes) => (shapes.length === 1 ? shapes[0] : retain(Manifold.union(shapes)));
+    const subtract = (base, tools) => retain(base.subtract(union(tools)));
+
+    /** A bore, or a slot as a capsule: two rounded ends joined by a straight side. */
+    const holeCapsule = (hole, wallThickness, baseZ, depth, facetCount = parameters.segments) => {
+      const [start, end] = holeSegment(hole);
+      const diameter = hole.diameter + wallThickness * 2;
+      if (hole.slotLength === hole.diameter) return cylinder(hole.x, hole.y, baseZ, diameter, depth, facetCount);
+      return union([
+        cylinder(start[0], start[1], baseZ, diameter, depth, facetCount),
+        cylinder(end[0], end[1], baseZ, diameter, depth, facetCount),
+        hole.slotAxis === 'x'
+          ? box(start[0], hole.y - diameter / 2, baseZ, end[0] - start[0], diameter, depth)
+          : box(hole.x - diameter / 2, start[1], baseZ, diameter, end[1] - start[1], depth),
       ]);
-      const reference=pack('reference-rail',rail,1);
-      // Exact Boolean interference checks, excluding contact surfaces.
-      for(const solid of [main,...jaws]){
-        const collision=keep(solid.intersect(rail));
-        if(collision.volume()>1e-6) throw new Error('Internal error: part interferes with reference rail.');
+    };
+
+    /** The plate alone: a rounded rectangle extruded upward from Z = 0. */
+    const buildPlate = () => {
+      const { width, height, plateThickness, cornerRadius } = parameters;
+      if (cornerRadius === 0) return box(-width / 2, -height / 2, 0, width, height, plateThickness);
+
+      const outline = [];
+      for (let corner = 0; corner < 4; corner += 1) {
+        const cornerX = (corner === 0 || corner === 3 ? 1 : -1) * (width / 2 - cornerRadius);
+        const cornerY = (corner < 2 ? 1 : -1) * (height / 2 - cornerRadius);
+        for (let step = 0; step <= 12; step += 1) {
+          const angle = ((corner * 90 + (step * 90) / 12) * Math.PI) / 180;
+          outline.push([cornerX + cornerRadius * Math.cos(angle), cornerY + cornerRadius * Math.sin(angle)]);
+        }
       }
-      const printParts=parts.map((part,i)=>({
+      return retain(retain(new CrossSection([outline])).extrude(plateThickness));
+    };
+
+    /** One integral snap station: root block, blade fillets, retaining tooth and release ledge. */
+    const appendSnapStation = (shapeList, stationCenterX) => {
+      const {
+        rootStart, anchorLength, anchorEnd, freeStart, headStart, bladeInner,
+        thickness, radius, depth, rampHeight, releaseOuter, length: freeLength, headLength,
+      } = snapGeometry;
+      const baseZ = -flangeGap - depth;
+
+      // Only the root block reaches the plate; the small positive overlap below is intentional.
+      shapeList.push(box(stationCenterX + rootStart, bladeInner, baseZ, anchorLength, thickness + radius, depth + flangeGap + 0.02));
+      // Wider root shoulder below flange level, carrying both XY root fillets.
+      shapeList.push(box(stationCenterX + rootStart, bladeInner - radius, baseZ, anchorLength + 0.02, thickness + 2 * radius, depth));
+      shapeList.push(box(stationCenterX + anchorEnd - 0.02, bladeInner, baseZ, radius + freeLength + headLength + 0.02, thickness, depth));
+
+      for (const side of [-1, 1]) {
+        const bladeEdgeY = side < 0 ? bladeInner : bladeInner + thickness;
+        const filletCenterY = bladeEdgeY + side * radius;
+        const outline = [
+          [stationCenterX + anchorEnd - 0.02, bladeEdgeY - side * 0.02],
+          [stationCenterX + anchorEnd - 0.02, filletCenterY],
+        ];
+        for (let step = 1; step <= 16; step += 1) {
+          const angle = ((180 + (side < 0 ? -1 : 1) * ((90 * step) / 16)) * Math.PI) / 180;
+          outline.push([stationCenterX + freeStart + radius * Math.cos(angle), filletCenterY + radius * Math.sin(angle)]);
+        }
+        // The last arc point is (freeStart, bladeEdgeY), closing onto the straight blade edge.
+        outline.push([stationCenterX + freeStart, bladeEdgeY - side * 0.02]);
+        if (side > 0) outline.reverse();
+        shapeList.push(translated(retain(retain(new CrossSection([outline])).extrude(depth)), [0, 0, baseZ]));
+      }
+
+      // Retaining tooth: a triangle in YZ extruded along +X, so the upper outer flange corner
+      // rides the diagonal as the rail moves +Z relative to the mount.
+      const toothSection = retain(new CrossSection([[
+        [railHalfWidth - parameters.hookOverlap, -flangeGap],
+        [bladeInner + 0.02, -flangeGap - rampHeight],
+        [bladeInner + 0.02, -flangeGap],
+      ]]));
+      shapeList.push(translated(retain(retain(toothSection.extrude(headLength)).rotate([90, 0, 90])), [stationCenterX + headStart, 0, 0]));
+
+      // The release ledge belongs to the free head, never to the fixed root: pulling it outward
+      // (+Y) bends the XY blade directly, with no deep return leg.
+      shapeList.push(box(stationCenterX + headStart, bladeInner + thickness - 0.02, -flangeGap - 2, headLength, releaseOuter - bladeInner - thickness + 0.02, 2));
+    };
+
+    /** Suggested print orientation, with the lowest feature on the bed (STL z >= 0). */
+    const printPosition = (point, partIndex) => {
+      const [alongRail, acrossRail, throughPlate] = point;
+      if (isSnap) return [alongRail, acrossRail, throughPlate + snapGeometry.printZShift];
+      // Main body onto its X edge; each retaining bar onto its flat plate-contact face.
+      if (partIndex === 0) return [-throughPlate, acrossRail, alongRail + parameters.width / 2];
+      return [alongRail - stationCenters[partIndex - 1], -acrossRail, -throughPlate];
+    };
+
+    /** Copy one solid out as a plain mesh, so no WASM handle escapes into the result. */
+    const packSolid = (name, solid, quantity) => {
+      if (solid.status() !== 'NoError' || solid.isEmpty()) throw new Error(`Invalid solid: ${name} (${solid.status()})`);
+
+      const components = solid.decompose();
+      const componentCount = components.length;
+      components.forEach((component) => component.delete());
+      if (componentCount !== 1) throw new Error(`${name} must have one connected component; got ${componentCount}.`);
+
+      const rawMesh = solid.getMesh();
+      const positions = new Float32Array(rawMesh.numVert * 3);
+      for (let vertex = 0; vertex < rawMesh.numVert; vertex += 1) {
+        for (let component = 0; component < 3; component += 1) {
+          positions[3 * vertex + component] = rawMesh.vertProperties[rawMesh.numProp * vertex + component];
+        }
+      }
+      const mesh = { positions, indices: new Uint32Array(rawMesh.triVerts) };
+      return { name, quantity, mesh, volumeMm3: solid.volume(), bounds: solid.boundingBox(), triangles: mesh.indices.length / 3 };
+    };
+
+    try {
+      const mainBodySolids = [buildPlate()];
+
+      // Standoffs are capsule bosses rising from the plate top.
+      for (const hole of holes) {
+        if (hole.standoffHeight > 0) mainBodySolids.push(holeCapsule(hole, parameters.standoffWall, parameters.plateThickness - 0.02, hole.standoffHeight + 0.02));
+      }
+
+      // The fixed hook reaches under the far flange and seats the plate onto the rail.
+      for (const stationCenterX of stationCenters) {
+        const hookMinX = stationCenterX - parameters.clipWidth / 2;
+        mainBodySolids.push(box(hookMinX, -hookOuterY, -parameters.hookDepth, parameters.clipWidth, hookOuterY - railHalfWidth - parameters.fitClearance, parameters.hookDepth + 0.02));
+        mainBodySolids.push(box(hookMinX, -hookOuterY, -parameters.hookDepth, parameters.clipWidth, hookOuterY - railHalfWidth + parameters.hookOverlap, parameters.hookDepth - flangeGap));
+      }
+
+      if (isSnap) for (const stationCenterX of stationCenters) appendSnapStation(mainBodySolids, stationCenterX);
+
+      // Bores and slots are cut last, so nothing can hollow out a standoff, hook or anchor.
+      const cutSolids = holes.map((hole) => (isSnap
+        ? holeCapsule(hole, 0, -0.02, parameters.plateThickness + hole.standoffHeight + 1)
+        : holeCapsule(hole, 0, -parameters.hookDepth - 1, parameters.hookDepth + parameters.plateThickness + hole.standoffHeight + 2)));
+      for (const screw of clampScrewHoles) cutSolids.push(cylinder(screw.x, screw.y, -1, parameters.clampHoleDiameter, parameters.plateThickness + 2));
+      // Lightening slots cut the plate only, with 16 facets per rounded end.
+      for (const slot of slots) {
+        cutSolids.push(holeCapsule({ x: slot.x, y: slot.y, diameter: parameters.slotWidth, slotLength: slot.length, slotAxis: 'x' }, 0, -0.5, parameters.plateThickness + 1, 16));
+      }
+
+      let mainBody = cutSolids.length === 0 ? union(mainBodySolids) : subtract(union(mainBodySolids), cutSolids);
+      if (isSnap) {
+        // Re-importing through Float32 and cleaning up keeps sub-micron CSG slivers out of the STL.
+        const mesh = mainBody.getMesh();
+        const rounded = retain(new Manifold({
+          numProp: mesh.numProp,
+          vertProperties: Float32Array.from(mesh.vertProperties),
+          triVerts: mesh.triVerts,
+          mergeFromVert: mesh.mergeFromVert,
+          mergeToVert: mesh.mergeToVert,
+        }));
+        mainBody = retain(retain(rounded.asOriginal()).setTolerance(0.0001));
+      }
+
+      const parts = [packSolid('main', mainBody, 1)];
+      const retainingBars = [];
+      if (!isSnap) {
+        stationCenters.forEach((stationCenterX, stationIndex) => {
+          const barMinX = stationCenterX - parameters.clipWidth / 2;
+          const barBody = box(barMinX, railHalfWidth + parameters.fitClearance, -parameters.hookDepth, parameters.clipWidth, barOuterY - railHalfWidth - parameters.fitClearance, parameters.hookDepth);
+          const barLip = box(barMinX, railHalfWidth - parameters.hookOverlap, -parameters.hookDepth, parameters.clipWidth, barOuterY - railHalfWidth + parameters.hookOverlap, parameters.hookDepth - flangeGap);
+          const barCuts = [];
+          for (const screw of clampScrewHoles.slice(stationIndex * 2, stationIndex * 2 + 2)) {
+            barCuts.push(cylinder(screw.x, screw.y, -parameters.hookDepth - 1, parameters.clampHoleDiameter, parameters.hookDepth + 2));
+            barCuts.push(cylinder(screw.x, screw.y, -parameters.hookDepth - 0.02, (2 * parameters.nutAcrossFlats) / Math.sqrt(3), parameters.nutDepth + 0.02, 6));
+          }
+          const retainingBar = subtract(union([barBody, barLip]), barCuts);
+          retainingBars.push(retainingBar);
+          parts.push(packSolid(`jaw-${stationIndex + 1}`, retainingBar, 1));
+        });
+      }
+      // Dimensionally illustrative reference rail; never fabricated or exported.
+      const railLength = parameters.width + 30;
+      const webWidth = 24;
+      const railTopZ = -parameters.fitClearance / 2;
+      const railThickness = parameters.flangeThickness;
+      const referenceRail = union([
+        box(-railLength / 2, -webWidth / 2, railTopZ - parameters.railHeight, railLength, webWidth, railThickness),
+        box(-railLength / 2, -webWidth / 2, railTopZ - parameters.railHeight, railLength, railThickness, parameters.railHeight),
+        box(-railLength / 2, webWidth / 2 - railThickness, railTopZ - parameters.railHeight, railLength, railThickness, parameters.railHeight),
+        box(-railLength / 2, -railHalfWidth, railTopZ - railThickness, railLength, railHalfWidth - webWidth / 2 + railThickness, railThickness),
+        box(-railLength / 2, webWidth / 2 - railThickness, railTopZ - railThickness, railLength, railHalfWidth - webWidth / 2 + railThickness, railThickness),
+      ]);
+      const referencePart = packSolid('reference-rail', referenceRail, 1);
+
+      // Exact Boolean interference checks, excluding contact surfaces.
+      for (const solid of [mainBody, ...retainingBars]) {
+        const collision = retain(solid.intersect(referenceRail));
+        if (collision.volume() > 1e-6) throw new Error('Internal error: part interferes with reference rail.');
+      }
+
+      const printParts = parts.map((part, partIndex) => ({
         ...part,
-        // Main on X edge, jaws on their flat plate-contact side; STL z>=0.
-        mesh: transformMesh(part.mesh,snap ? ([x,y,z])=>[x,y,z+snapGeometry.printZShift] : i===0 ? ([x,y,z])=>[-z,y,x+p.width/2] : ([x,y,z])=>[x-centers[i-1],-y,-z]),
+        mesh: transformMesh(part.mesh, (point) => printPosition(point, partIndex)),
       }));
       for (const part of printParts) part.bounds = meshBounds(part.mesh);
-      const warnings=[
+      const warnings = [
         'Prototype geometry: rail fit, load capacity, vibration resistance and temperature performance have NOT been physically tested.',
         'Main body: suggested X-edge orientation needs a brim and supports under projecting hooks/standoffs and some bores. Inspect the sliced toolpaths. Jaws: plate-contact face on bed; support the flange recess as needed.',
         'The retaining bar captures the rail lips; it does not friction-lock travel along X. Use rail end stops where longitudinal movement matters.',
         'Install rail clamp screws before the electronics. Use appropriate device screws; prevent their tips contacting rail, components or conductors.',
       ];
-      if(snap){
-        warnings.splice(1,3,
+      if (isSnap) {
+        warnings.splice(1, 3,
           'Snap prototype: beam runs along X, flexes +Y, and must stay in XY print layers. Suggested transform keeps Z up and puts the lowest feature on the bed; support the plate, beam, tab and ramp as needed. Remove support without fusing the flexure to the plate.',
           'Pull the free-head tab outward (+Y), clear the +Y flange, then tilt off the fixed hook. Release each station. Stop once clear; there is no overtravel stop.',
           'Snap is positive capture with clearance, not preload or an X-axis friction lock. Use rail end stops if needed. Fit, fatigue, PETG elasticity and load capacity require physical testing.',
           'Keep device screw tips/nuts and cables clear of the entire moving beam/tab envelope; hole validation checks the printed anchor, not hardware.');
       }
-      if(!snap && holes.some(h=>h.standoffHeight<5)) warnings.push('Low device clearance: M3 socket heads protrude above the plate. Confirm the device underside clears them; increase standoffs if needed.');
-      if(p.width>150 || p.height>150 || holes.some(h=>h.standoffHeight>15)) warnings.push('Large spans/tall standoffs: stiffness and load capacity require particular attention.');
-      holes.forEach((h,i)=>{
-        const [a,b]=segment(h), hardwareRadius=Math.max(3.2,h.diameter);
-        const lo=Math.min(a[1],b[1])-hardwareRadius,hi=Math.max(a[1],b[1])+hardwareRadius;
-        if ((hi>=11 && lo<=railHalf) || (hi>=-railHalf && lo<=-11)) warnings.push(`Hole ${i+1}: back-side hardware may overlap a rail lip/sidewall. Check your screw/nut envelope before printing.`);
+      if (!isSnap && holes.some((hole) => hole.standoffHeight < 5)) warnings.push('Low device clearance: M3 socket heads protrude above the plate. Confirm the device underside clears them; increase standoffs if needed.');
+      if (parameters.width > 150 || parameters.height > 150 || holes.some((hole) => hole.standoffHeight > 15)) warnings.push('Large spans/tall standoffs: stiffness and load capacity require particular attention.');
+      holes.forEach((hole, index) => {
+        const [start, end] = holeSegment(hole);
+        const hardwareRadius = Math.max(3.2, hole.diameter);
+        const lowestY = Math.min(start[1], end[1]) - hardwareRadius;
+        const highestY = Math.max(start[1], end[1]) + hardwareRadius;
+        if ((highestY >= 11 && lowestY <= railHalfWidth) || (highestY >= -railHalfWidth && lowestY <= -11)) {
+          warnings.push(`Hole ${index + 1}: back-side hardware may overlap a rail lip/sidewall. Check your screw/nut envelope before printing.`);
+        }
       });
-      const grip=p.plateThickness+p.hookDepth-p.nutDepth;
-      return {version:VERSION,units:'mm',parameters:p,resolvedHoles:holes,parts,printParts,reference,
-        hardware:{clampScrews:{count:snap?0:p.clipCount*2,type:snap?'None (integral snap)':'M3 socket-head machine screw',lengthUnderHeadRange:snap?null:[Number((grip+2.4).toFixed(2)),Number((p.plateThickness+p.hookDepth+1).toFixed(2))]},
-          clampNuts:{count:snap?0:p.clipCount*2,type:snap?'None (integral snap)':'M3 hex nut; verify actual thickness and across-flats'},deviceScrews:{count:holes.length,type:'Choose for your device; mounting bores are plain clearance holes, NOT threads.'}},
-        dimensions:{flangeGap:gap,clipCentersX:centers,clampScrewCenters:screws.map(({x,y})=>[x,y]),railRunsAlong:'X',...(snap?{retention:'snap',snap:snapGeometry}:{})},warnings};
-    } finally { for(let i=objects.length-1;i>=0;i--) objects[i].delete(); }
-    function pack(name,solid,quantity) {
-      if(solid.status()!=='NoError'||solid.isEmpty()) throw new Error(`Invalid solid: ${name} (${solid.status()})`);
-      const components=solid.decompose(); const count=components.length; components.forEach(o=>o.delete());
-      if(count!==1) throw new Error(`${name} must have one connected component; got ${count}.`);
-      const raw=solid.getMesh();
-      const positions=new Float32Array(raw.numVert*3);
-      for(let i=0;i<raw.numVert;i++)for(let j=0;j<3;j++) positions[3*i+j]=raw.vertProperties[raw.numProp*i+j];
-      const mesh={positions,indices:new Uint32Array(raw.triVerts)};
-      return {name,quantity,mesh,volumeMm3:solid.volume(),bounds:solid.boundingBox(),triangles:mesh.indices.length/3};
+
+      const screwGrip = parameters.plateThickness + parameters.hookDepth - parameters.nutDepth;
+      const lighteningOpeningArea = slots.reduce(
+        (total, slot) => total + (slot.length - parameters.slotWidth) * parameters.slotWidth + (Math.PI * parameters.slotWidth ** 2) / 4,
+        0,
+      );
+
+      return {
+        version: VERSION,
+        units: 'mm',
+        parameters,
+        resolvedHoles: holes,
+        parts,
+        printParts,
+        reference: referencePart,
+        hardware: {
+          clampScrews: {
+            count: isSnap ? 0 : parameters.clipCount * 2,
+            type: isSnap ? 'None (integral snap)' : 'M3 socket-head machine screw',
+            lengthUnderHeadRange: isSnap ? null : [Number((screwGrip + 2.4).toFixed(2)), Number((parameters.plateThickness + parameters.hookDepth + 1).toFixed(2))],
+          },
+          clampNuts: {
+            count: isSnap ? 0 : parameters.clipCount * 2,
+            type: isSnap ? 'None (integral snap)' : 'M3 hex nut; verify actual thickness and across-flats',
+          },
+          deviceScrews: {
+            count: holes.length,
+            type: 'Choose for your device; mounting bores are plain clearance holes, NOT threads.',
+          },
+        },
+        dimensions: {
+          flangeGap,
+          clipCentersX: stationCenters,
+          clampScrewCenters: clampScrewHoles.map((screw) => [screw.x, screw.y]),
+          railRunsAlong: 'X',
+          ...(isSnap ? { retention: 'snap', snap: snapGeometry } : {}),
+          ...(parameters.lightening
+            ? { lightening: { slots: slots.length, removedMm3: Number((lighteningOpeningArea * parameters.plateThickness).toFixed(1)) } }
+            : {}),
+        },
+        warnings,
+      };
+    } finally {
+      for (let index = disposables.length - 1; index >= 0; index -= 1) disposables[index].delete();
     }
   }
 }
-export function transformMesh(mesh,transform) {
-  const positions=new Float32Array(mesh.positions.length);
-  for(let i=0;i<positions.length;i+=3)positions.set(transform(Array.from(mesh.positions.subarray(i,i+3))),i);
-  return {positions,indices:new Uint32Array(mesh.indices)};
+
+/** Apply a point transform to every vertex of a mesh, keeping its index buffer. */
+export function transformMesh(mesh, transformPoint) {
+  const positions = new Float32Array(mesh.positions.length);
+  for (let offset = 0; offset < positions.length; offset += 3) {
+    positions.set(transformPoint(Array.from(mesh.positions.subarray(offset, offset + 3))), offset);
+  }
+  return { positions, indices: new Uint32Array(mesh.indices) };
 }
-/** Binary STL has no unit metadata. Import into slicer as millimetres. */
-export function toSTL(mesh,description='DIN mount core; units mm') {
-  const {positions:p,indices:idx}=mesh;
-  if(!(p instanceof Float32Array)||!(idx instanceof Uint32Array)||p.length%3||idx.length%3||!idx.length) throw new Error('Expected nonempty indexed triangle mesh.');
-  if(!p.every(Number.isFinite)||idx.some(i=>i*3+2>=p.length)) throw new Error('Invalid mesh vertices or indices.');
-  const count=idx.length/3,buffer=new ArrayBuffer(84+count*50),v=new DataView(buffer);
-  new Uint8Array(buffer,0,80).set(new TextEncoder().encode(description).slice(0,80)); v.setUint32(80,count,true);
-  for(let t=0;t<count;t++){
-    const a=idx[t*3]*3,b=idx[t*3+1]*3,c=idx[t*3+2]*3;
-    const u=[p[b]-p[a],p[b+1]-p[a+1],p[b+2]-p[a+2]],w=[p[c]-p[a],p[c+1]-p[a+1],p[c+2]-p[a+2]];
-    const n=[u[1]*w[2]-u[2]*w[1],u[2]*w[0]-u[0]*w[2],u[0]*w[1]-u[1]*w[0]],length=Math.hypot(...n);
-    if(!length) throw new Error('Degenerate triangle in STL export.');
-    let offset=84+t*50;
-    for(const f of [...n.map(x=>x/length),...p.subarray(a,a+3),...p.subarray(b,b+3),...p.subarray(c,c+3)]){v.setFloat32(offset,f,true);offset+=4;}
-    v.setUint16(offset,0,true);
+/** Binary STL has no unit metadata. Import into a slicer as millimetres. */
+export function toSTL(mesh, description = 'DIN mount core; units mm') {
+  const { positions, indices } = mesh;
+  if (!(positions instanceof Float32Array) || !(indices instanceof Uint32Array) || positions.length % 3 || indices.length % 3 || !indices.length) {
+    throw new Error('Expected nonempty indexed triangle mesh.');
+  }
+  if (!positions.every(Number.isFinite) || indices.some((index) => index * 3 + 2 >= positions.length)) throw new Error('Invalid mesh vertices or indices.');
+
+  const triangleCount = indices.length / 3;
+  const buffer = new ArrayBuffer(84 + triangleCount * 50);
+  const view = new DataView(buffer);
+  new Uint8Array(buffer, 0, 80).set(new TextEncoder().encode(description).slice(0, 80));
+  view.setUint32(80, triangleCount, true);
+
+  for (let triangle = 0; triangle < triangleCount; triangle += 1) {
+    const first = indices[triangle * 3] * 3;
+    const second = indices[triangle * 3 + 1] * 3;
+    const third = indices[triangle * 3 + 2] * 3;
+    const edgeA = [positions[second] - positions[first], positions[second + 1] - positions[first + 1], positions[second + 2] - positions[first + 2]];
+    const edgeB = [positions[third] - positions[first], positions[third + 1] - positions[first + 1], positions[third + 2] - positions[first + 2]];
+    const normal = [edgeA[1] * edgeB[2] - edgeA[2] * edgeB[1], edgeA[2] * edgeB[0] - edgeA[0] * edgeB[2], edgeA[0] * edgeB[1] - edgeA[1] * edgeB[0]];
+    const normalLength = Math.hypot(...normal);
+    if (!normalLength) throw new Error('Degenerate triangle in STL export.');
+
+    const face = [...normal.map((component) => component / normalLength), ...positions.subarray(first, first + 3), ...positions.subarray(second, second + 3), ...positions.subarray(third, third + 3)];
+    let offset = 84 + triangle * 50;
+    for (const value of face) {
+      view.setFloat32(offset, value, true);
+      offset += 4;
+    }
+    view.setUint16(offset, 0, true);
   }
   return new Uint8Array(buffer);
 }
 
 export function meshBounds(mesh) {
-  const min=[Infinity,Infinity,Infinity],max=[-Infinity,-Infinity,-Infinity];
-  for(let i=0;i<mesh.positions.length;i++) {const a=i%3;min[a]=Math.min(min[a],mesh.positions[i]);max[a]=Math.max(max[a],mesh.positions[i]);}
-  return {min,max};
+  const minimum = [Infinity, Infinity, Infinity];
+  const maximum = [-Infinity, -Infinity, -Infinity];
+  for (let offset = 0; offset < mesh.positions.length; offset += 1) {
+    const axis = offset % 3;
+    minimum[axis] = Math.min(minimum[axis], mesh.positions[offset]);
+    maximum[axis] = Math.max(maximum[axis], mesh.positions[offset]);
+  }
+  return { min: minimum, max: maximum };
 }

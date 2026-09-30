@@ -45,6 +45,6 @@
 
   const value = computed({
     get: () => props.modelValue,
-    set: (next) => emit('update:modelValue', next),
+    set: (nextValue) => emit('update:modelValue', nextValue),
   });
 </script>

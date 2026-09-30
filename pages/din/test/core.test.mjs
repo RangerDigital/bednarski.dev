@@ -1,26 +1,26 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createGenerator, PRESETS, normalizeParameters, ParameterError, toSTL, meshBounds } from '../core.mjs';
-const g=await createGenerator();
+import { createGenerator, PRESETS, normalizeParameters, ParameterError, toSTL, meshBounds, lighteningSlots } from '../core.mjs';
+const generator = await createGenerator();
 // Independent verification of serialized STL: welded topology, directed edges,
 // signed volume, finite vertices and unit-length normals.
 function checkSTL(bytes,expectedVolume){
-  const v=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),n=v.getUint32(80,true);
-  assert.equal(bytes.length,84+n*50);let volume=0;const edges=new Map();
-  const key=p=>p.map(x=>Math.round(x*1e5)).join(',');
-  for(let t=0;t<n;t++){
-    const off=84+t*50,normal=[0,1,2].map(i=>v.getFloat32(off+i*4,true));
+  const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),triangleCount=view.getUint32(80,true);
+  assert.equal(bytes.length,84+triangleCount*50);let volume=0;const edges=new Map();
+  const vertexKey=point=>point.map(component=>Math.round(component*1e5)).join(',');
+  for(let triangle=0;triangle<triangleCount;triangle++){
+    const offset=84+triangle*50,normal=[0,1,2].map(axis=>view.getFloat32(offset+axis*4,true));
     assert.ok(Math.abs(Math.hypot(...normal)-1)<1e-5);
-    const p=[0,1,2].map(i=>[0,1,2].map(j=>v.getFloat32(off+12+i*12+j*4,true)));
-    assert.ok(p.flat().every(Number.isFinite));
-    for(let i=0;i<3;i++){
-      const a=key(p[i]),b=key(p[(i+1)%3]);assert.notEqual(a,b);
-      const k=a<b?`${a}|${b}`:`${b}|${a}`,e=edges.get(k)||[0,0];e[0]++;e[1]+=a<b?1:-1;edges.set(k,e);
+    const vertices=[0,1,2].map(vertex=>[0,1,2].map(axis=>view.getFloat32(offset+12+vertex*12+axis*4,true)));
+    assert.ok(vertices.flat().every(Number.isFinite));
+    for(let vertex=0;vertex<3;vertex++){
+      const from=vertexKey(vertices[vertex]),to=vertexKey(vertices[(vertex+1)%3]);assert.notEqual(from,to);
+      const edgeKey=from<to?`${from}|${to}`:`${to}|${from}`,edge=edges.get(edgeKey)||[0,0];edge[0]++;edge[1]+=from<to?1:-1;edges.set(edgeKey,edge);
     }
-    const [a,b,c]=p;
-    volume+=(a[0]*(b[1]*c[2]-b[2]*c[1])+a[1]*(b[2]*c[0]-b[0]*c[2])+a[2]*(b[0]*c[1]-b[1]*c[0]))/6;
+    const [vertexA,vertexB,vertexC]=vertices;
+    volume+=(vertexA[0]*(vertexB[1]*vertexC[2]-vertexB[2]*vertexC[1])+vertexA[1]*(vertexB[2]*vertexC[0]-vertexB[0]*vertexC[2])+vertexA[2]*(vertexB[0]*vertexC[1]-vertexB[1]*vertexC[0]))/6;
   }
-  for(const [edge,[count,direction]] of edges){assert.equal(count,2,`open/nonmanifold edge ${edge}`);assert.equal(direction,0,'inconsistent winding');}
+  for(const [edgeKey,[uses,direction]] of edges){assert.equal(uses,2,`open/nonmanifold edge ${edgeKey}`);assert.equal(direction,0,'inconsistent winding');}
   assert.ok(volume>0);assert.ok(Math.abs(volume-expectedVolume)/expectedVolume<1e-5);
 }
 const cases={...PRESETS,
@@ -31,21 +31,21 @@ const cases={...PRESETS,
   minimum:{...PRESETS.fitCoupon,width:32,clipWidth:24,plateThickness:3},
 };
 for(const [name,params] of Object.entries(cases))test(`${name}: watertight STL, orientation, dimensions and parts`,()=>{
-  const model=g.generate(params);assert.equal(model.parts.length,1+params.clipCount);
+  const model=generator.generate(params);assert.equal(model.parts.length,1+params.clipCount);
   for(const part of [...model.parts,...model.printParts])checkSTL(toSTL(part.mesh),part.volumeMm3);
-  for(const part of model.printParts){const b=meshBounds(part.mesh);assert.ok(Math.abs(b.min[2])<1e-5);assert.deepEqual(b,part.bounds);}
-  const main=model.parts[0],b=meshBounds(main.mesh);
-  assert.ok(Math.abs(b.max[0]-b.min[0]-params.width)<1e-5);
-  assert.ok(Math.abs(b.max[1]-b.min[1]-params.height)<1e-5);
+  for(const part of model.printParts){const printBounds=meshBounds(part.mesh);assert.ok(Math.abs(printBounds.min[2])<1e-5);assert.deepEqual(printBounds,part.bounds);}
+  const mainBounds=meshBounds(model.parts[0].mesh);
+  assert.ok(Math.abs(mainBounds.max[0]-mainBounds.min[0]-params.width)<1e-5);
+  assert.ok(Math.abs(mainBounds.max[1]-mainBounds.min[1]-params.height)<1e-5);
   assert.equal(model.resolvedHoles.length,params.pattern==='rectangle'?4:params.pattern==='custom'?params.holes.length:2);
 });
 test('invalid inputs are rejected before geometry, without state corruption',()=>{
-  for(const p of [null,{width:NaN},{height:Infinity},{clipCount:0},{widht:90},{pattern:'custom',holes:[{x:0,y:24}]},{pitchX:299},{clipCount:2,clipSpacing:28},{pattern:'custom',holes:[{x:20,y:0},{x:20,y:0}]},{holeDiameter:-1},{pattern:'custom',holes:[{x:20,y:0,slotLength:1}]}]) assert.throws(()=>normalizeParameters(p),ParameterError);
-  assert.equal(g.generate(PRESETS.pcb4).parts.length,2);
+  for(const invalid of [null,{width:NaN},{height:Infinity},{clipCount:0},{widht:90},{pattern:'custom',holes:[{x:0,y:24}]},{pitchX:299},{clipCount:2,clipSpacing:28},{pattern:'custom',holes:[{x:20,y:0},{x:20,y:0}]},{holeDiameter:-1},{pattern:'custom',holes:[{x:20,y:0,slotLength:1}]}]) assert.throws(()=>normalizeParameters(invalid),ParameterError);
+  assert.equal(generator.generate(PRESETS.pcb4).parts.length,2);
 });
 test('clearance changes actual geometry, not only metadata',()=>{
-  const tight=g.generate({...PRESETS.fitCoupon,fitClearance:0.1});
-  const loose=g.generate({...PRESETS.fitCoupon,fitClearance:0.6});
+  const tight=generator.generate({...PRESETS.fitCoupon,fitClearance:0.1});
+  const loose=generator.generate({...PRESETS.fitCoupon,fitClearance:0.6});
   assert.notEqual(tight.parts[0].volumeMm3,loose.parts[0].volumeMm3);
   assert.ok(loose.parts[1].volumeMm3<tight.parts[1].volumeMm3);
 });
@@ -53,10 +53,10 @@ test('snap clip: one integral part, watertight, and it unlocks close centre-line
   // A Y-line pattern at 50 mm puts holes where the bar and its screw heads sit, so it only
   // exists in snap mode (or with two clip stations).
   assert.throws(()=>normalizeParameters({...PRESETS.pcb4,pattern:'line-y',pitchY:50}),ParameterError);
-  const y50={...PRESETS.pcb4,retention:'snap',pattern:'line-y',pitchY:50};
-  assert.ok(normalizeParameters(y50));
-  for(const params of [y50,{...PRESETS.psu2,retention:'snap'},{...PRESETS.pcb4,retention:'snap',railHeight:15,flangeThickness:2,snapFreeLength:30}]){
-    const model=g.generate(params);
+  const snapYLine50={...PRESETS.pcb4,retention:'snap',pattern:'line-y',pitchY:50};
+  assert.ok(normalizeParameters(snapYLine50));
+  for(const params of [snapYLine50,{...PRESETS.psu2,retention:'snap'},{...PRESETS.pcb4,retention:'snap',railHeight:15,flangeThickness:2,snapFreeLength:30}]){
+    const model=generator.generate(params);
     assert.equal(model.dimensions.retention,'snap');
     assert.equal(model.parts.length,1);
     assert.equal(model.hardware.clampScrews.count,0);
@@ -72,4 +72,39 @@ test('snap clip: one integral part, watertight, and it unlocks close centre-line
   // Derived constraint, not an input range: a short, thick blade with large travel fails the
   // strain screen even though every individual value is inside its own limit.
   assert.throws(()=>normalizeParameters({...PRESETS.pcb4,retention:'snap',snapFreeLength:18,snapBladeThickness:2,hookOverlap:3,fitClearance:0.8}),ParameterError);
+});
+test('lightening: one watertight part, and exactly the reported volume is removed',()=>{
+  const configurations=[['pcb4',PRESETS.pcb4],['psu2',PRESETS.psu2],['snap',{...PRESETS.pcb4,retention:'snap'}]];
+  for(const [name,baseParameters] of configurations){
+    const params={...baseParameters,lightening:true};
+    const solid=generator.generate(baseParameters);
+    const lightened=generator.generate(params),info=lightened.dimensions.lightening;
+    assert.equal(lightened.parts.length,params.retention==='snap'?1:1+params.clipCount,name);
+    assert.ok(info.slots>2,`${name}: expected a slot pattern`);
+    checkSTL(toSTL(lightened.parts[0].mesh),lightened.parts[0].volumeMm3);
+    // The report is the analytic capsule volume, so a slot clipping a bore, a clip footprint or a
+    // snap blade would remove a different amount of material and show up as drift here.
+    const removed=solid.parts[0].volumeMm3-lightened.parts[0].volumeMm3;
+    assert.ok(Math.abs(removed-info.removedMm3)/info.removedMm3<0.02,`${name}: removed ${removed} vs reported ${info.removedMm3}`);
+    assert.ok(removed>solid.parts[0].volumeMm3*0.3,`${name}: expected a real saving`);
+    assert.ok(lightened.parts[0].triangles>solid.parts[0].triangles,name);
+  }
+  assert.throws(()=>normalizeParameters({...PRESETS.pcb4,lightening:true,slotWidth:12}),ParameterError);
+  assert.throws(()=>normalizeParameters({...PRESETS.pcb4,lightening:true,ribWidth:0.4}),ParameterError);
+  assert.throws(()=>normalizeParameters({...PRESETS.pcb4,lightening:'yes'}),ParameterError);
+});
+test('lightening layout: inside the plate, clear of every bore and clip footprint',()=>{
+  const configuration=normalizeParameters({...PRESETS.psu2,lightening:true});
+  const slots=lighteningSlots(configuration), {width,height,slotWidth}=configuration.parameters;
+  assert.ok(slots.length>20);
+  for(const slot of slots){
+    assert.ok(Math.abs(slot.x)+slot.length/2<=width/2+1e-9);
+    assert.ok(Math.abs(slot.y)+slotWidth/2<=height/2+1e-9);
+    for(const hole of configuration.holes){
+      const gapX=Math.abs(slot.x-hole.x)-(slot.length/2+hole.diameter/2);
+      const gapY=Math.abs(slot.y-hole.y)-(slotWidth/2+hole.diameter/2);
+      assert.ok(gapX>0||gapY>0,`slot at (${slot.x},${slot.y}) reaches hole at (${hole.x},${hole.y})`);
+    }
+  }
+  assert.deepEqual(lighteningSlots({parameters:{lightening:false}}),[]);
 });

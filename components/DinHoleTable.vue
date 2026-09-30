@@ -1,8 +1,6 @@
 <template>
   <div class="flex flex-col gap-2">
-    <p class="text-[11px] leading-snug text-white/35">
-      From the plate centre. Slot length is overall. Max 32 holes.
-    </p>
+    <p class="text-[11px] leading-snug text-white/35"> From the plate centre. Slot length is overall. Max 32 holes. </p>
 
     <div
       v-for="(hole, index) in modelValue"
@@ -14,6 +12,7 @@
         <span class="text-[10px] uppercase tracking-wider text-white/40">Hole {{ index + 1 }}</span>
         <button
           type="button"
+          :aria-label="`Remove hole ${index + 1}`"
           class="rounded border border-dark-lighter px-2 py-1 text-[10px] text-white/60 transition-colors duration-200 hover:border-primary hover:text-white"
           @click="removeHole(index)"
         >
@@ -157,7 +156,7 @@
 
   const emit = defineEmits(['update:modelValue']);
 
-  const number = (raw) => (String(raw).trim() === '' ? NaN : Number(raw));
+  const toNumber = (text) => (String(text).trim() === '' ? NaN : Number(text));
 
   const isSlot = (hole) => {
     const diameter = hole.diameter ?? props.defaultDiameter;
@@ -168,9 +167,9 @@
 
   const cloneRows = () => props.modelValue.map((hole) => ({ ...hole }));
 
-  function setField(index, key, raw) {
+  function setField(index, key, text) {
     const rows = cloneRows();
-    rows[index][key] = number(raw);
+    rows[index][key] = toNumber(text);
     emit('update:modelValue', rows);
   }
 
@@ -209,14 +208,14 @@
 
     // Walk outwards along X from the plate centre until the new hole clears the others,
     // so adding a hole does not immediately produce an invalid layout.
-    let x = 0;
+    let candidateX = 0;
     for (let attempt = 0; attempt < 150; attempt += 1) {
-      const clash = rows.some((hole) => Math.hypot((hole.x ?? 0) - x, Number(hole.y) || 0) < clearance(hole) + newClearance + 1.5);
+      const clash = rows.some((hole) => Math.hypot((Number(hole.x) || 0) - candidateX, Number(hole.y) || 0) < clearance(hole) + newClearance + 1.5);
       if (!clash) break;
-      x += 2;
+      candidateX += 2;
     }
 
-    rows.push({ x, y: 0, diameter: props.defaultDiameter, standoffHeight: props.defaultStandoff });
+    rows.push({ x: candidateX, y: 0, diameter: props.defaultDiameter, standoffHeight: props.defaultStandoff });
     emit('update:modelValue', rows);
   }
 

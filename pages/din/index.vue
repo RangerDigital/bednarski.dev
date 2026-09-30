@@ -21,12 +21,9 @@
           v-for="preset in PRESET_LIST"
           :key="preset.id"
           type="button"
+          :aria-pressed="activePreset === preset.id"
           class="rounded-full border px-4 py-1.5 text-xs transition-colors duration-200"
-          :class="
-            activePreset === preset.id
-              ? 'border-primary bg-primary/10 text-white'
-              : 'border-dark-lighter bg-dark-light text-white/70 hover:border-primary hover:text-white'
-          "
+          :class="activePreset === preset.id ? 'border-primary bg-primary/10 text-white' : 'border-dark-lighter bg-dark-light text-white/70 hover:border-primary hover:text-white'"
           @click="applyPreset(preset.id)"
         >
           {{ preset.label }}
@@ -36,15 +33,15 @@
 
     <div class="flex flex-col gap-6 xl:flex-row xl:items-start xl:gap-5">
       <div class="order-2 flex w-full min-w-0 flex-col gap-3 xl:order-1 xl:w-80 xl:shrink-0">
-        <DinGroup v-for="group in BASIC_GROUPS" :key="group.id" :title="group.title" :note="groupNote(group)" :open="group.open">
+        <DinGroup v-for="group in basicGroups" :key="group.id" :title="group.title" :note="group.note" :open="group.open">
           <DinFieldRow
-            v-for="field in visibleFields(group)"
-            :key="field.key"
-            v-model="params[field.key]"
-            :field="field"
-            :min="boundsFor(field).min"
-            :max="boundsFor(field).max"
-            :error="fieldError(field.key)"
+            v-for="row in group.rows"
+            :key="row.field.key"
+            v-model="params[row.field.key]"
+            :field="row.field"
+            :min="row.min"
+            :max="row.max"
+            :error="row.error"
           />
 
           <div v-if="group.id === 'plate'" class="flex flex-col gap-1.5">
@@ -84,15 +81,15 @@
           </svg>
         </button>
 
-        <DinGroup v-for="group in ADVANCED_GROUPS" v-show="showAdvanced" :key="group.id" :title="group.title" :note="group.note" open>
+        <DinGroup v-for="group in advancedGroups" v-show="showAdvanced" :key="group.id" :title="group.title" :note="group.note" open>
           <DinFieldRow
-            v-for="field in visibleFields(group)"
-            :key="field.key"
-            v-model="params[field.key]"
-            :field="field"
-            :min="boundsFor(field).min"
-            :max="boundsFor(field).max"
-            :error="fieldError(field.key)"
+            v-for="row in group.rows"
+            :key="row.field.key"
+            v-model="params[row.field.key]"
+            :field="row.field"
+            :min="row.min"
+            :max="row.max"
+            :error="row.error"
           />
         </DinGroup>
 
@@ -161,9 +158,7 @@
           <button type="button" :class="primaryButton" :disabled="!canExport" @click="downloadAll">Download all {{ printable.length }} parts</button>
 
           <div class="flex flex-wrap gap-2">
-            <button v-for="part in printable" :key="part.name" type="button" :class="smallButton" :disabled="!canExport" @click="downloadPart(part)">
-              {{ part.name }}.stl
-            </button>
+            <button v-for="part in printable" :key="part.name" type="button" :class="smallButton" :disabled="!canExport" @click="downloadPart(part)"> {{ part.name }}.stl </button>
           </div>
 
           <p class="text-[11px] leading-snug text-white/35">
@@ -193,8 +188,12 @@
                   {{ hardware.clampScrews.lengthUnderHeadRange[0] }}&ndash;{{ hardware.clampScrews.lengthUnderHeadRange[1] }} mm under head, no washer
                 </span>
               </li>
-              <li v-if="hardware.clampNuts.count"><span class="font-medium text-white">{{ hardware.clampNuts.count }} &times;</span> {{ hardware.clampNuts.type }}</li>
-              <li><span class="font-medium text-white">{{ hardware.deviceScrews.count }} &times;</span> {{ hardware.deviceScrews.type }}</li>
+              <li v-if="hardware.clampNuts.count"
+                ><span class="font-medium text-white">{{ hardware.clampNuts.count }} &times;</span> {{ hardware.clampNuts.type }}</li
+              >
+              <li
+                ><span class="font-medium text-white">{{ hardware.deviceScrews.count }} &times;</span> {{ hardware.deviceScrews.type }}</li
+              >
             </ul>
 
             <dl v-if="dimensions" class="mt-3 flex flex-col gap-1 border-t border-dark-lighter pt-3 text-xs text-white/70">
@@ -210,9 +209,15 @@
                 <dt class="text-white/45">Overall envelope</dt>
                 <dd>{{ overall.size.map((value) => value.toFixed(1)).join(' × ') }} mm</dd>
               </div>
+              <div v-if="dimensions.lightening" class="flex flex-col gap-0.5">
+                <dt class="text-white/45">Lightening</dt>
+                <dd class="text-[11px]">{{ dimensions.lightening.slots }} slots &middot; {{ formatNumber(dimensions.lightening.removedMm3) }} mm&sup3; removed</dd>
+              </div>
               <div class="flex flex-col gap-0.5">
                 <dt class="text-white/45">Clamp screw centres (x, y)</dt>
-                <dd class="text-[11px]">{{ dimensions.clampScrewCenters.length ? dimensions.clampScrewCenters.map(([x, y]) => `(${x.toFixed(1)}, ${y.toFixed(1)})`).join(' ') : 'none (snap clip)' }}</dd>
+                <dd class="text-[11px]">{{
+                  dimensions.clampScrewCenters.length ? dimensions.clampScrewCenters.map(([screwX, screwY]) => `(${screwX.toFixed(1)}, ${screwY.toFixed(1)})`).join(' ') : 'none (snap clip)'
+                }}</dd>
               </div>
 
               <template v-if="dimensions.snap">
@@ -293,6 +298,11 @@
     { value: 2, label: 'Two clip stations' },
   ];
 
+  const LIGHTENING_OPTIONS = [
+    { value: false, label: 'Solid plate' },
+    { value: true, label: 'Lightened (rounded slots)' },
+  ];
+
   const BASIC_GROUPS = [
     {
       id: 'mount',
@@ -304,8 +314,7 @@
           key: 'retention',
           label: 'Retention',
           options: RETENTION_OPTIONS,
-          hint:
-            'Screw bar: clamped by two M3 screws, takes up fit play. Snap clip: an integral spring with a 45° insertion ramp and a release tab, strain-screened at design time, but still needing a print test.',
+          hint: 'Screw bar: clamped by two M3 screws, takes up fit play. Snap clip: an integral spring with a 45° insertion ramp and a release tab, strain-screened at design time, but still needing a print test.',
         },
       ],
     },
@@ -318,7 +327,18 @@
         { key: 'width', label: 'Width along rail (X)', step: 1, slider: true },
         { key: 'height', label: 'Height across rail (Y)', step: 1, slider: true },
         { key: 'plateThickness', label: 'Thickness', step: 0.5, hint: 'Carries the clamp screws.' },
+        { key: 'lightening', label: 'Plate body', options: LIGHTENING_OPTIONS },
         { key: 'cornerRadius', label: 'Corner radius', step: 0.5, advanced: true },
+        { key: 'slotWidth', label: 'Lightening slot width', step: 0.5, slider: true, advanced: true, when: (parameters) => parameters.lightening },
+        {
+          key: 'ribWidth',
+          label: 'Lightening rib width',
+          step: 0.1,
+          slider: true,
+          advanced: true,
+          when: (parameters) => parameters.lightening,
+          hint: 'Material kept between slots and to the plate edge.',
+        },
       ],
     },
     {
@@ -328,14 +348,14 @@
       open: true,
       fields: [
         { key: 'pattern', label: 'Hole pattern', options: PATTERN_OPTIONS },
-        { key: 'pitchX', label: 'Spacing X (centre to centre)', step: 0.5, slider: true, when: (p) => p.pattern === 'rectangle' || p.pattern === 'line-x' },
-        { key: 'pitchY', label: 'Spacing Y (centre to centre)', step: 0.5, slider: true, when: (p) => p.pattern === 'rectangle' || p.pattern === 'line-y' },
+        { key: 'pitchX', label: 'Spacing X (centre to centre)', step: 0.5, slider: true, when: (parameters) => parameters.pattern === 'rectangle' || parameters.pattern === 'line-x' },
+        { key: 'pitchY', label: 'Spacing Y (centre to centre)', step: 0.5, slider: true, when: (parameters) => parameters.pattern === 'rectangle' || parameters.pattern === 'line-y' },
         {
           key: 'holeDiameter',
           label: 'Hole diameter',
           step: 0.1,
           slider: true,
-          when: (p) => p.pattern !== 'custom',
+          when: (parameters) => parameters.pattern !== 'custom',
           hint: 'Modelled size. 3.4 mm takes an M3 screw.',
         },
         { key: 'standoffHeight', label: 'Standoff height above plate', step: 0.5, slider: true, hint: '0 prints a flat plate.' },
@@ -370,10 +390,10 @@
           label: 'Clip centre spacing (along rail)',
           step: 1,
           slider: true,
-          when: (p) => p.clipCount === 2,
-          bounds: (p, snap) => {
-            const min = Math.max(LIMITS.clipSpacing[0], p.clipWidth + 4, snap ? Math.ceil(snap.span + snap.sweptXAllowance + 1) : 0);
-            return { min, max: Math.max(min, p.width - p.clipWidth - 4) };
+          when: (parameters) => parameters.clipCount === 2,
+          bounds: (parameters, snapGeometry) => {
+            const min = Math.max(LIMITS.clipSpacing[0], parameters.clipWidth + 4, snapGeometry ? Math.ceil(snapGeometry.span + snapGeometry.sweptXAllowance + 1) : 0);
+            return { min, max: Math.max(min, parameters.width - parameters.clipWidth - 4) };
           },
           hint: 'From the tightest legal station clearance to the widest that still fits inside the plate.',
         },
@@ -381,28 +401,26 @@
           key: 'snapBladeThickness',
           label: 'Snap blade thickness (Y)',
           step: 0.1,
-          when: (p) => p.retention === 'snap',
+          when: (parameters) => parameters.retention === 'snap',
           hint: '0.8–2 mm. A thicker beam is stiffer, so it strains more for the same deflection.',
         },
         {
           key: 'snapFreeLength',
           label: 'Snap free blade length (X)',
           step: 1,
-          when: (p) => p.retention === 'snap',
+          when: (parameters) => parameters.retention === 'snap',
           hint: '18–36 mm of free beam after the root fillet. Longer is softer. The snap span is derived from this, not from clip width.',
         },
-        { key: 'clampHoleDiameter', label: 'Clamp screw bore', step: 0.05, when: (p) => p.retention === 'screw' },
-        { key: 'nutAcrossFlats', label: 'Nut across flats', step: 0.05, when: (p) => p.retention === 'screw', hint: 'Hex pocket fit.' },
-        { key: 'nutDepth', label: 'Nut depth (thickness)', step: 0.05, when: (p) => p.retention === 'screw' },
+        { key: 'clampHoleDiameter', label: 'Clamp screw bore', step: 0.05, when: (parameters) => parameters.retention === 'screw' },
+        { key: 'nutAcrossFlats', label: 'Nut across flats', step: 0.05, when: (parameters) => parameters.retention === 'screw', hint: 'Hex pocket fit.' },
+        { key: 'nutDepth', label: 'Nut depth (thickness)', step: 0.05, when: (parameters) => parameters.retention === 'screw' },
       ],
     },
     {
       id: 'mesh',
       title: 'Mesh quality',
       note: 'export tessellation',
-      fields: [
-        { key: 'segments', label: 'Cylinder facets', unit: 'count', step: 1, hint: 'Integer. 64 facets ≈ 0.004 mm undersize on a 3.4 mm bore.' },
-      ],
+      fields: [{ key: 'segments', label: 'Cylinder facets', unit: 'count', step: 1, hint: 'Integer. 64 facets ≈ 0.004 mm undersize on a 3.4 mm bore.' }],
     },
   ];
 
@@ -436,9 +454,7 @@
     }
   });
 
-  const PRESET_JSON = Object.fromEntries(
-    PRESET_LIST.map((preset) => [preset.id, JSON.stringify(canonical(normalizeParameters(presetInput(preset))))])
-  );
+  const PRESET_JSON = Object.fromEntries(PRESET_LIST.map((preset) => [preset.id, JSON.stringify(canonical(normalizeParameters(presetInput(preset))))]));
 
   const activePreset = computed(() => {
     if (!validation.value.payload) return '';
@@ -472,18 +488,28 @@
     return min.every(Number.isFinite) ? { size: max.map((value, axis) => value - min[axis]) } : null;
   });
 
-  const visibleFields = (group) =>
-    group.fields
-      .filter((field) => showAdvanced.value || !field.advanced)
-      .filter((field) => !field.when || field.when(params));
+  const fieldError = (key) => errors.value.find((error) => typeof error === 'string' && error.startsWith(`${key}:`)) ?? '';
 
-  // Static LIMITS cover most fields; `bounds` derives the range from the current layout instead.
-  const boundsFor = (field) =>
-    field.bounds
-      ? field.bounds(params, model.value?.dimensions?.snap ?? null)
-      : { min: LIMITS[field.key]?.[0], max: LIMITS[field.key]?.[1] };
+  const snapGeometry = computed(() => model.value?.dimensions?.snap ?? null);
 
   const groupNote = (group) => (group.id === 'holes' && params.pattern === 'custom' ? `${params.holes.length} of 32 holes` : group.note);
+
+  // Static LIMITS cover most fields; a field `bounds` derives its range from the current layout.
+  const fieldBounds = (field) => (field.bounds ? field.bounds(params, snapGeometry.value) : { min: LIMITS[field.key]?.[0], max: LIMITS[field.key]?.[1] });
+
+  // Rows are resolved once per change, so the template only reads plain data.
+  const renderGroups = (groups) =>
+    groups.map((group) => ({
+      ...group,
+      note: groupNote(group),
+      rows: group.fields
+        .filter((field) => showAdvanced.value || !field.advanced)
+        .filter((field) => !field.when || field.when(params))
+        .map((field) => ({ field, ...fieldBounds(field), error: fieldError(field.key) })),
+    }));
+
+  const basicGroups = computed(() => renderGroups(BASIC_GROUPS));
+  const advancedGroups = computed(() => renderGroups(ADVANCED_GROUPS));
 
   const viewerStatus = computed(() => {
     if (engineFailed.value) return engineFailed.value;
@@ -491,13 +517,11 @@
     return busy.value ? 'Generating the first preview…' : 'Starting the geometry engine…';
   });
 
-  const fieldError = (key) => errors.value.find((error) => typeof error === 'string' && error.startsWith(`${key}:`)) ?? '';
-
   const holeErrorRows = computed(() =>
     errors.value
       .map((error) => (/^Hole (\d+):/.exec(error ?? '') ?? [])[1])
       .map(Number)
-      .filter((row) => Number.isInteger(row) && row > 0)
+      .filter((row) => Number.isInteger(row) && row > 0),
   );
 
   let worker = null;
@@ -536,7 +560,7 @@
       return;
     }
 
-    latestRequested = Math.max(latestRequested, data.id);
+    latestRequested = data.id;
     workerErrors.value = [];
     engineFailed.value = '';
     model.value = data.model;
@@ -580,7 +604,7 @@
   });
 
   function minimiseWidth() {
-    const probe = snapshot.value;
+    const probe = { ...snapshot.value };
     for (let width = LIMITS.width[0]; width < params.width; width += 1) {
       probe.width = width;
       try {
@@ -617,11 +641,15 @@
       // Parsed as data only - imported text is never evaluated as JavaScript.
       applyParameters(canonical(normalizeParameters(JSON.parse(await file.text()))));
     } catch (error) {
-      importError.value = Array.isArray(error?.errors) ? error.errors.join(' ') : error?.message ?? 'Unreadable JSON.';
+      importError.value = Array.isArray(error?.errors) ? error.errors.join(' ') : (error?.message ?? 'Unreadable JSON.');
     }
   }
 
-  const slug = () => designName.value.trim().replace(/[^a-z0-9-_]+/gi, '-').replace(/^-+|-+$/g, '') || 'din-mount';
+  const slug = () =>
+    designName.value
+      .trim()
+      .replace(/[^a-z0-9-_]+/gi, '-')
+      .replace(/^-+|-+$/g, '') || 'din-mount';
 
   function saveBytes(bytes, filename, mime) {
     const url = URL.createObjectURL(new Blob([bytes], { type: mime }));

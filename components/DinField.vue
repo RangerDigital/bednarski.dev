@@ -96,15 +96,15 @@
     (value) => {
       if (!Number.isFinite(value)) return;
       if (Number(text.value) !== value) text.value = format(value);
-    }
+    },
   );
 
   const rangeValue = computed(() => (Number.isFinite(props.modelValue) ? props.modelValue : props.min));
 
   function onInput(event) {
-    const raw = event.target.value;
-    text.value = raw;
-    emit('update:modelValue', raw.trim() === '' ? NaN : Number(raw));
+    const typedText = event.target.value;
+    text.value = typedText;
+    emit('update:modelValue', typedText.trim() === '' ? NaN : Number(typedText));
   }
 
   function onBlur() {

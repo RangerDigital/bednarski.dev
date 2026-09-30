@@ -27,7 +27,7 @@
       required: true,
     },
     modelValue: {
-      type: [String, Number],
+      type: [String, Number, Boolean],
       required: true,
     },
     options: {
@@ -51,8 +51,8 @@
   const emit = defineEmits(['update:modelValue']);
 
   function onChange(event) {
-    const raw = event.target.value;
-    const match = props.options.find((option) => String(option.value) === raw);
-    emit('update:modelValue', match ? match.value : raw);
+    const selected = event.target.value;
+    const matchingOption = props.options.find((option) => String(option.value) === selected);
+    emit('update:modelValue', matchingOption ? matchingOption.value : selected);
   }
 </script>

@@ -40,6 +40,8 @@ The bar seats against the plate; the rail occupies a clearance pocket between th
 
 The snap variant (`retention: 'snap'`) replaces the bar with an integral cantilever. One or two stations hang below the plate beside the rail: a root fillet anchors a horizontal beam (`snapFreeLength` long, `snapBladeThickness` thick) that runs along X, deflects in Y, and ends in an inward retaining tooth capturing the opposite flange. A 45 degree ramp on the head inserts the mount onto the rail, and the release tab sits beyond the plate's +Y edge, attached to the moving head rather than to the static base, so pushing it inward frees the clip. No screws or nuts are generated in this mode. `dimensions.snap` reports the beam geometry plus `strain`, `screenedStrain` and `releaseForceEstimateN` (bracketed for 1200 and 2200 MPa modulus assumptions). The engine rejects a screened strain above 3 percent, a release reach beyond 35 mm, and flexure that leaves the plate. Snap parts print translated in Z only, so the plate stays raised and the plate, beam and tab all need supports unlike the screw variant, which prints on its X edge.
 
+Lightening (`lightening: true`) cuts the plate through with rounded slots, saving roughly a third of the plate material. A solid border is kept at the plate edge, and material is kept around every bore and standoff, the hook and retaining-bar footprints, the clamp screw seats and the snap root. Slots run along the rail axis, so the suggested print orientations build them either as vertical channels that open onto both plate faces (main body standing on its X edge) or as plain through-holes (snap parts flat on the bed). Neither orientation has to bridge across a slot. The layout is derived, not stored: the free runs between the keep-out zones are split into slots of at most 22 mm with `ribWidth` of material left between them, so the pattern follows whatever plate, holes and clips you configure. `dimensions.lightening` reports the slot count and the removed volume.
+
 Assembly:
 
 1. Print the fit-coupon main body and bar. Confirm the rail's overall width and flange thickness with calipers; tune `fitClearance` if necessary.
@@ -56,31 +58,32 @@ Mounting bores for the electronics are **plain clearance holes**, not tapped hol
 
 All dimensions are **millimetres**. X runs along the rail, Y across its 35 mm width, and +Z points toward the electronics. The plate is centered at X=Y=0. Its underside is Z=0; the plate top is `plateThickness`. A standoff's height is measured above the plate. STL carries no unit metadata: import as millimetres.
 
-| Parameter | Purpose | Default |
-|---|---|---:|
-| `width`, `height` | Plate size along X and Y | 90, 66 |
-| `plateThickness`, `cornerRadius` | Solid plate and outside corner radius | 4, 3 |
-| `pattern` | `rectangle`, `line-x`, `line-y`, or `custom` | `rectangle` |
-| `pitchX`, `pitchY` | Center-to-center hole separation for standard patterns | 70, 44 |
-| `holeDiameter` | Finished design diameter of mounting bore | 3.4 |
-| `standoffHeight` | Height above plate; zero disables boss | 6 |
-| `standoffWall` | Radial material around each bore/slot | 2 |
-| `holes` | Arbitrary hole objects in custom mode; maximum 32 | `[]` |
-| `railWidth` | Measured rail width; allowed 34–36, intended TH35 | 35 |
-| `railHeight` | Reference rail depth, 7.5 or 15; does not change lip capture | 7.5 |
-| `flangeThickness` | Measured rail-lip thickness | 1 |
-| `fitClearance` | Clearance on each rail side and total added flange-gap height | 0.3 |
-| `hookOverlap` | Capture inward from each nominal rail edge | 2 |
-| `hookDepth` | Total rearward hook/bar depth | 6 |
-| `clipCount` | One or two hook/bar stations | 1 |
-| `clipWidth` | Width of each station along rail | 26 |
-| `clipSpacing` | Center spacing along X for two stations | 50 |
-| `clampHoleDiameter` | Through bore for M3 clamp screws | 3.4 |
-| `retention` | `screw` (retaining bar) or `snap` (integral cantilever clip) | `screw` |
-| `snapBladeThickness` | Snap mode: thickness of the flexible beam, allowed 0.8–2 | 1.2 |
-| `snapFreeLength` | Snap mode: free beam length after the root fillet, allowed 18–36 | 22 |
-| `nutAcrossFlats`, `nutDepth` | M3 hex-pocket fit | 5.8, 2.6 |
-| `segments` | Cylinder facets, integer 32–128 | 64 |
+| Parameter                        | Purpose                                                          |     Default |
+| -------------------------------- | ---------------------------------------------------------------- | ----------: |
+| `width`, `height`                | Plate size along X and Y                                         |      90, 66 |
+| `plateThickness`, `cornerRadius` | Solid plate and outside corner radius                            |        4, 3 |
+| `lightening`, `slotWidth`, `ribWidth` | Through-slot plate lightening, open width and kept rib width |  false, 4, 2 |
+| `pattern`                        | `rectangle`, `line-x`, `line-y`, or `custom`                     | `rectangle` |
+| `pitchX`, `pitchY`               | Center-to-center hole separation for standard patterns           |      70, 44 |
+| `holeDiameter`                   | Finished design diameter of mounting bore                        |         3.4 |
+| `standoffHeight`                 | Height above plate; zero disables boss                           |           6 |
+| `standoffWall`                   | Radial material around each bore/slot                            |           2 |
+| `holes`                          | Arbitrary hole objects in custom mode; maximum 32                |        `[]` |
+| `railWidth`                      | Measured rail width; allowed 34–36, intended TH35                |          35 |
+| `railHeight`                     | Reference rail depth, 7.5 or 15; does not change lip capture     |         7.5 |
+| `flangeThickness`                | Measured rail-lip thickness                                      |           1 |
+| `fitClearance`                   | Clearance on each rail side and total added flange-gap height    |         0.3 |
+| `hookOverlap`                    | Capture inward from each nominal rail edge                       |           2 |
+| `hookDepth`                      | Total rearward hook/bar depth                                    |           6 |
+| `clipCount`                      | One or two hook/bar stations                                     |           1 |
+| `clipWidth`                      | Width of each station along rail                                 |          26 |
+| `clipSpacing`                    | Center spacing along X for two stations                          |          50 |
+| `clampHoleDiameter`              | Through bore for M3 clamp screws                                 |         3.4 |
+| `retention`                      | `screw` (retaining bar) or `snap` (integral cantilever clip)     |     `screw` |
+| `snapBladeThickness`             | Snap mode: thickness of the flexible beam, allowed 0.8–2         |         1.2 |
+| `snapFreeLength`                 | Snap mode: free beam length after the root fillet, allowed 18–36 |          22 |
+| `nutAcrossFlats`, `nutDepth`     | M3 hex-pocket fit                                                |    5.8, 2.6 |
+| `segments`                       | Cylinder facets, integer 32–128                                  |          64 |
 
 The nominal flange pocket is `flangeThickness + fitClearance`. The illustrative rail is centered in this vertical clearance; each rail side has `fitClearance` lateral room. The hook overlap is measured from nominal rail edges, not from the outside of the clearance gap. `holeDiameter` and nut-pocket dimensions are actual modeled sizes, with no hidden printer compensation. Circular holes are polygonal approximations; at 64 facets a 3.4 mm bore has about 0.004 mm less inscribed diameter.
 
@@ -93,7 +96,7 @@ const result = generator.generate({
   ...PRESETS.custom,
   holes: [
     { x: -30, y: -20, diameter: 3.4, standoffHeight: 8 },
-    { x:  30, y:  20, diameter: 4.5, slotLength: 10, slotAxis: 'x', standoffHeight: 3 },
+    { x: 30, y: 20, diameter: 4.5, slotLength: 10, slotAxis: 'x', standoffHeight: 3 },
   ],
 });
 ```
@@ -130,7 +133,10 @@ Dispose of previous Three.js geometry/material resources after regeneration. The
 const worker = new Worker(new URL('./worker.mjs', import.meta.url), { type: 'module' });
 worker.postMessage({ id: 1, action: 'generate', parameters: PRESETS.pcb4 });
 worker.onmessage = ({ data }) => {
-  if (!data.ok) { showErrors(data.errors); return; }
+  if (!data.ok) {
+    showErrors(data.errors);
+    return;
+  }
   // Use data.model.parts + optional data.model.reference in preview.
 };
 // Download one part:
@@ -138,7 +144,7 @@ worker.postMessage({ id: 2, action: 'stl', partName: 'main', parameters: PRESETS
 // On response: new Blob([data.bytes], { type: 'model/stl' }).
 ```
 
-The worker imports `manifold-3d/manifold.wasm?url`, which Vite must emit as a local asset. Other bundlers should pass their emitted WASM URL to `createGenerator({ locateFile: () => wasmURL })`. No CDN, remote geometry service, or secret key is required. Serve over HTTP(S), not `file://`. Keep parameters as numbers, debounce edits, and ignore responses older than the most recently requested `id`. Generation errors must disable export of the *current* configuration rather than silently downloading a stale mesh. `index.vue` and the `Din*` components in `components/` are the reference UI built on this contract; `core.mjs` and `worker.mjs` stay usable without them.
+The worker imports `manifold-3d/manifold.wasm?url`, which Vite must emit as a local asset. Other bundlers should pass their emitted WASM URL to `createGenerator({ locateFile: () => wasmURL })`. No CDN, remote geometry service, or secret key is required. Serve over HTTP(S), not `file://`. Keep parameters as numbers, debounce edits, and ignore responses older than the most recently requested `id`. Generation errors must disable export of the _current_ configuration rather than silently downloading a stale mesh. `index.vue` and the `Din*` components in `components/` are the reference UI built on this contract; `core.mjs` and `worker.mjs` stay usable without them.
 
 ## Printing and verification
 
@@ -146,7 +152,7 @@ Use a material suited to actual load, heat and environment. PETG is a reasonable
 
 The suggested main-body orientation stands the plate on its X edge. **It requires a brim and supports for projecting hooks/standoffs and possibly horizontal bores.** Review the slicer layer preview. The retaining bar is placed on its plate-contact face; its lip recess may need support. A snap part is only translated in Z, so its plate stays raised above the bed and the plate, beam and release tab all need support. Orientation is a starting point, not support-free optimization. Export `parts` instead if you prefer to choose the orientation yourself. Start with a small fit coupon, then test the assembled adapter with representative load and operating temperature.
 
-`npm test` independently parses exported binary STL and checks welded edge pairing, face winding, positive signed volume, agreement with CAD volume, print-bed placement and main dimensions. It tests default PCB, two-station PSU, arbitrary holes, slots, vertical two-hole pattern, thicker flange/15 mm rail, no standoffs and minimum-size variants, plus rejection of invalid parameters. The CAD engine checks each output is one connected solid and has no volumetric collision with the schematic reference rail. The snap suite adds byte-identical screw-mode STL regression against `core.screw-baseline.mjs`, a single watertight snap part, clearance and print-placement assertions, and a 512-combination rail and plate sweep. These checks do **not** establish real-world fit or strength.
+`npm test` independently parses exported binary STL and checks welded edge pairing, face winding, positive signed volume, agreement with CAD volume, print-bed placement and main dimensions. It tests default PCB, two-station PSU, arbitrary holes, slots, vertical two-hole pattern, thicker flange/15 mm rail, no standoffs and minimum-size variants, plus rejection of invalid parameters. The CAD engine checks each output is one connected solid and has no volumetric collision with the schematic reference rail. The snap suite adds byte-identical screw-mode STL regression against `core.screw-baseline.mjs`, a single watertight snap part, clearance and print-placement assertions, and a 512-combination rail and plate sweep. The lightening tests check that the analytic removed volume matches the exported mesh within 2 percent, which also proves no slot reaches a bore or a clip footprint. These checks do **not** establish real-world fit or strength.
 
 ## Files
 
