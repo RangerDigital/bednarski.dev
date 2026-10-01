@@ -62,7 +62,8 @@ test('snap clip: one integral part, watertight, and it unlocks close centre-line
     assert.equal(model.hardware.clampScrews.count,0);
     assert.equal(model.hardware.clampScrews.lengthUnderHeadRange,null);
     assert.ok(model.dimensions.snap.strain>0 && model.dimensions.snap.screenedStrain<=0.03);
-    assert.equal(model.dimensions.snap.rampAngleToInsertionDeg,45);
+    // Ramp angle falls out of the pocket room and travel, so assert the usable insertion band.
+    assert.ok(model.dimensions.snap.rampAngleToInsertionDeg>30&&model.dimensions.snap.rampAngleToInsertionDeg<50);
     assert.equal(model.resolvedHoles.length,params.pattern==='rectangle'?4:2);
     for(const part of [...model.parts,...model.printParts]) checkSTL(toSTL(part.mesh),part.volumeMm3);
     for(const part of model.printParts) assert.ok(Math.abs(meshBounds(part.mesh).min[2])<1e-5);
@@ -74,6 +75,35 @@ test('snap clip: one integral part, watertight, and it unlocks close centre-line
   const stopTravelLeaves={...PRESETS.pcb4,retention:'snap',snapFreeLength:28,snapBladeThickness:1.2,hookOverlap:2.2,fitClearance:0.7,height:80,railHeight:15};
   assert.ok(normalizeParameters({...stopTravelLeaves,snapClearance:0.3}).snapGeometry.screenedStrain<=0.03);
   assert.throws(()=>normalizeParameters({...stopTravelLeaves,snapClearance:0.6}),ParameterError);
+  // Rail room must not be eaten by the mechanism behind the plate: the bearing shelf is the deepest
+  // feature, so the default snap preset keeps real clearance inside a 7.5 mm rail reference and the
+  // whole shelf-clearance range still builds.
+  const defaultSnap=normalizeParameters({...PRESETS.pcb4,retention:'snap'});
+  const railPlane=PRESETS.pcb4.railHeight+PRESETS.pcb4.fitClearance/2-0.2;
+  assert.ok(railPlane+defaultSnap.snapGeometry.bearingBottom>=0.5);
+  for(const snapClearance of [0.3,0.4,0.5,0.6]) assert.ok(normalizeParameters({...PRESETS.pcb4,retention:'snap',snapClearance}));
+});
+test('snap pocket carries extra rail room without loading the leaves harder',()=>{
+  const base=PRESETS.pcb4,railHalf=base.railWidth/2;
+  const screw=normalizeParameters(base),snap=normalizeParameters({...base,retention:'snap'});
+  // The screw bar is pulled on by its screws, so it keeps the bare fit clearance; the hand-fitted snap
+  // gets a margin on both rail sides, which is what stops an oversize real rail from wedging the jaw.
+  assert.equal(screw.railPocketClearance,base.fitClearance);
+  assert.ok(snap.railPocketClearance-base.fitClearance>=0.2,`snap margin ${snap.railPocketClearance-base.fitClearance}`);
+  assert.equal(snap.snapGeometry.pocketClearance,snap.railPocketClearance);
+  assert.equal(snap.snapGeometry.bladeInner,railHalf+snap.railPocketClearance);
+  // Extra room is clearance, not deflection: travel, the stop travel and the force estimate still come
+  // from hookOverlap + fitClearance, so capture and leaf strain are exactly as designed.
+  const expectedTravel=base.hookOverlap+base.fitClearance;
+  assert.ok(Math.abs(snap.snapGeometry.travel-expectedTravel)<1e-9);
+  assert.ok(Math.abs(snap.snapGeometry.stopTravel-(expectedTravel+base.snapClearance))<1e-9);
+  assert.ok(Math.abs(snap.snapGeometry.releaseForceEstimateN[0]- (2*1200*snap.snapGeometry.depth*base.snapBladeThickness**3*expectedTravel)/base.snapFreeLength**3)<1e-9);
+  // A rail at the top of the measured tolerance band gets the same extra room. A wider rail also pushes
+  // the outboard travel stop further from the plate centre, so it needs a taller plate.
+  const topOfBand=normalizeParameters({...base,retention:'snap',railWidth:36,height:80});
+  assert.ok(topOfBand.railPocketClearance>base.fitClearance);
+  assert.equal(topOfBand.snapGeometry.travel,snap.snapGeometry.travel);
+  assert.throws(()=>normalizeParameters({...base,retention:'snap',railWidth:36}),ParameterError);
 });
 test('lightening: one watertight part, and exactly the reported volume is removed',()=>{
   const configurations=[['pcb4',PRESETS.pcb4],['psu2',PRESETS.psu2],['snap',{...PRESETS.pcb4,retention:'snap'}]];

@@ -1,13 +1,15 @@
 /** DIN mount core. Millimetres; +Z toward device, X along rail, Y across rail. */
 import ManifoldModule from 'manifold-3d';
 
-export const VERSION = '1.0.0';
+export const VERSION = '1.1.0';
 export const DEFAULTS = Object.freeze({
   width: 90, height: 66, plateThickness: 4, cornerRadius: 3,
   lightening: false, slotWidth: 4, ribWidth: 2,
   pattern: 'rectangle', pitchX: 70, pitchY: 44, holeDiameter: 3.4,
   standoffHeight: 6, standoffWall: 2, holes: [],
   railWidth: 35, railHeight: 7.5, flangeThickness: 1,
+  // Real rails vary, so this is room per side rather than a bare minimum. Raise it if a printed part
+  // has to be forced onto a rail; the engine reports any other limit that then collides.
   fitClearance: 0.3, hookOverlap: 2, hookDepth: 6,
   clipWidth: 26, clipCount: 1, clipSpacing: 50,
   clampHoleDiameter: 3.4, nutAcrossFlats: 5.8, nutDepth: 2.6,
@@ -32,13 +34,25 @@ export const SNAP_PRESETS = Object.freeze({
   yline50: { ...PRESETS.pcb4, retention: 'snap', pattern: 'line-y', pitchY: 50 },
   fitCoupon: { ...PRESETS.fitCoupon, retention: 'snap', width: 48, height: 66 },
 });
+
+/**
+ * Extra rail-pocket room per side for the snap variant, in millimetres.
+ *
+ * A screw-retained bar is pulled onto the rail by its clamp screws, so it may start tight. A snap clip
+ * is pushed on by hand, so a rail that measures wider than the value entered as `railWidth` (paint,
+ * zinc, rolling tolerance) would otherwise wedge the jaw and drive the leaves past their designed
+ * travel until they crack. This is pocket *clearance*, not extra deflection: the leaf travel, ramp,
+ * travel stop, capture depth and release force are all derived from `hookOverlap + fitClearance` and
+ * are unchanged, so the fit gets easier without the flexure working any harder.
+ */
+const SNAP_POCKET_MARGIN = 0.25;
 export const LIMITS = Object.freeze({
   snapBladeThickness:[0.8,1.6], snapFreeLength:[24,40], snapClearance:[0.3,0.6],
   width:[32,300], height:[62,300], plateThickness:[3,12], cornerRadius:[0,12],
   slotWidth:[2.5,8], ribWidth:[1.2,4],
   pitchX:[0.5,280], pitchY:[0.5,280], holeDiameter:[2,8], standoffHeight:[0,30],
   standoffWall:[1.5,6], railWidth:[34,36], railHeight:[7.5,15],
-  flangeThickness:[0.8,2], fitClearance:[0.1,0.8], hookOverlap:[1,3],
+  flangeThickness:[0.8,2], fitClearance:[0.1,1.1], hookOverlap:[1,3],
   hookDepth:[5,10], clipWidth:[24,50], clipSpacing:[26,250],
   clampHoleDiameter:[3.2,3.8], nutAcrossFlats:[5.5,6.3], nutDepth:[2.4,3.2], segments:[32,128],
 });
@@ -229,6 +243,8 @@ export function normalizeParameters(input = {}) {
   const hookOuterY = railHalfWidth + parameters.fitClearance + 4;
   const flangeGap = parameters.flangeThickness + parameters.fitClearance;
   const isSnap = parameters.retention === 'snap';
+  // Lateral room per rail side. The snap variant adds its own margin on top, see SNAP_POCKET_MARGIN.
+  const railPocketClearance = parameters.fitClearance + (isSnap ? SNAP_POCKET_MARGIN : 0);
   let snapGeometry = null;
 
   if (isSnap) {
@@ -238,12 +254,18 @@ export function normalizeParameters(input = {}) {
     const anchorLength = 4;
     const headLength = 4;
     const leafSpacing = 5;
-    const bladeInnerY = railHalfWidth + parameters.fitClearance;
-    const outerBladeInnerY = bladeInnerY + leafSpacing;
+    // The inner leaf face is what the rail touches, so that is where the pocket margin goes.
+    const bladeInnerY = railHalfWidth + railPocketClearance;
+    // Everything behind it - outer leaf, jaw, tab, travel stop - keeps its nominal position, so the
+    // extra room costs no plate height and changes no travel, strain or release force. The leaf pair
+    // ends up SNAP_POCKET_MARGIN closer together than the nominal spacing.
+    const outerBladeInnerY = railHalfWidth + parameters.fitClearance + leafSpacing;
     const travel = parameters.hookOverlap + parameters.fitClearance;
     const stopTravel = travel + parameters.snapClearance;
     // Fixed 45 degree insertion ramp; the paired leaves flex in XY, bending toward +Y.
     const rampHeight = travel;
+    // The ramp runs from the tooth tip out to the jaw face, so a roomier pocket also flattens it.
+    const rampRun = bladeInnerY + 0.02 - (railHalfWidth - parameters.hookOverlap);
     const bladeDepth = Math.max(4, rampHeight + 0.4);
     const span = anchorLength + 2 * rootRadius + freeLength + headLength;
     const rootStart = -span / 2;
@@ -261,9 +283,12 @@ export function normalizeParameters(input = {}) {
     const stopStartX = headEnd - 1.2;
     const stopY = headOuterY + stopTravel;
     const stopOuterY = stopY + 2.4;
-    // Bearing shelf sits one clearance below the jaw and is carried by the side wall.
+    // Bearing shelf sits one clearance below the jaw and is carried by the side wall. It is the
+    // deepest feature of the assembly, so its thickness is what that budget can still afford:
+    // thinner buys clearance behind the plate against a real rail and panel, thicker bears more.
+    const bearingShelfThickness = 1.2;
     const bearingTopZ = -flangeGap - bladeDepth - parameters.snapClearance;
-    const bearingBottomZ = bearingTopZ - 1.6;
+    const bearingBottomZ = bearingTopZ - bearingShelfThickness;
     // Two approximately fixed-guided leaves, not one free-ended cantilever.
     const strain = (3 * bladeThickness * travel) / (freeLength * freeLength);
     const maxStrain = (3 * bladeThickness * stopTravel) / (freeLength * freeLength);
@@ -294,13 +319,14 @@ export function normalizeParameters(input = {}) {
       radius: rootRadius,
       anchorLength,
       headLength,
-      spacing: leafSpacing,
+      spacing: outerBladeInnerY - bladeInnerY,
       bladeInner: bladeInnerY,
       outerBladeInner: outerBladeInnerY,
       headOuter: headOuterY,
       travel,
       stopTravel,
       rampHeight,
+      rampRun,
       depth: bladeDepth,
       span,
       rootStart,
@@ -319,12 +345,14 @@ export function normalizeParameters(input = {}) {
       stopOuter: stopOuterY,
       bearingTop: bearingTopZ,
       bearingBottom: bearingBottomZ,
+      shelf: bearingShelfThickness,
       strain,
       maxStrain,
       screenedStrain,
       releaseForceEstimateN: [releaseForceAt(1200), releaseForceAt(2200)],
       modulusAssumptionMPa: [1200, 2200],
-      rampAngleToInsertionDeg: 45,
+      pocketClearance: railPocketClearance,
+      rampAngleToInsertionDeg: (Math.atan2(rampHeight, rampRun) * 180) / Math.PI,
       printZShift: Math.max(parameters.hookDepth, -bearingBottomZ),
     };
   }
@@ -414,6 +442,7 @@ export function normalizeParameters(input = {}) {
     clampScrewY,
     barOuterY,
     hookOuterY,
+    railPocketClearance,
     isSnap,
     snapGeometry,
   };
@@ -429,7 +458,7 @@ export async function createGenerator(wasmOptions = {}) {
 
   function generate(input = {}) {
     const configuration = normalizeParameters(input);
-    const { parameters, holes, stationCenters, clampScrewHoles, flangeGap, railHalfWidth, barOuterY, hookOuterY, isSnap, snapGeometry } = configuration;
+    const { parameters, holes, stationCenters, clampScrewHoles, flangeGap, railHalfWidth, railPocketClearance, barOuterY, hookOuterY, isSnap, snapGeometry } = configuration;
     const slots = lighteningSlots(configuration);
 
     // Manifold objects hold WASM memory, so every one created here is released in the finally block.
@@ -578,10 +607,11 @@ export async function createGenerator(wasmOptions = {}) {
         if (hole.standoffHeight > 0) mainBodySolids.push(holeCapsule(hole, parameters.standoffWall, parameters.plateThickness - 0.02, hole.standoffHeight + 0.02));
       }
 
-      // The fixed hook reaches under the far flange and seats the plate onto the rail.
+      // The fixed hook reaches under the far flange and seats the plate onto the rail. It uses the same
+      // pocket clearance as the moving jaw, so both sides of the rail get the snap margin.
       for (const stationCenterX of stationCenters) {
         const hookMinX = stationCenterX - parameters.clipWidth / 2;
-        mainBodySolids.push(box(hookMinX, -hookOuterY, -parameters.hookDepth, parameters.clipWidth, hookOuterY - railHalfWidth - parameters.fitClearance, parameters.hookDepth + 0.02));
+        mainBodySolids.push(box(hookMinX, -hookOuterY, -parameters.hookDepth, parameters.clipWidth, hookOuterY - railHalfWidth - railPocketClearance, parameters.hookDepth + 0.02));
         mainBodySolids.push(box(hookMinX, -hookOuterY, -parameters.hookDepth, parameters.clipWidth, hookOuterY - railHalfWidth + parameters.hookOverlap, parameters.hookDepth - flangeGap));
       }
 

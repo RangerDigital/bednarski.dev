@@ -34,15 +34,7 @@
     <div class="flex flex-col gap-6 xl:flex-row xl:items-start xl:gap-5">
       <div class="order-2 flex w-full min-w-0 flex-col gap-3 xl:order-1 xl:w-80 xl:shrink-0">
         <DinGroup v-for="group in basicGroups" :key="group.id" :title="group.title" :note="group.note" :open="group.open">
-          <DinFieldRow
-            v-for="row in group.rows"
-            :key="row.field.key"
-            v-model="params[row.field.key]"
-            :field="row.field"
-            :min="row.min"
-            :max="row.max"
-            :error="row.error"
-          />
+          <DinFieldRow v-for="row in group.rows" :key="row.field.key" v-model="params[row.field.key]" :field="row.field" :min="row.min" :max="row.max" :error="row.error" />
 
           <div v-if="group.id === 'plate'" class="flex flex-col gap-1.5">
             <button type="button" :class="smallButton" :disabled="!isValid" @click="minimiseWidth">Minimise plate width</button>
@@ -82,15 +74,7 @@
         </button>
 
         <DinGroup v-for="group in advancedGroups" v-show="showAdvanced" :key="group.id" :title="group.title" :note="group.note" open>
-          <DinFieldRow
-            v-for="row in group.rows"
-            :key="row.field.key"
-            v-model="params[row.field.key]"
-            :field="row.field"
-            :min="row.min"
-            :max="row.max"
-            :error="row.error"
-          />
+          <DinFieldRow v-for="row in group.rows" :key="row.field.key" v-model="params[row.field.key]" :field="row.field" :min="row.min" :max="row.max" :error="row.error" />
         </DinGroup>
 
         <DinGroup title="Design file" note="reproducible JSON">
@@ -163,7 +147,9 @@
 
           <p class="text-[11px] leading-snug text-white/35">
             Separate STL per part, in the suggested print orientation, sitting on Z=0. Import as millimetres.
-            <span v-if="params.retention === 'snap'">Snap parts print with the flexure plane parallel to the bed, so the plate, leaves and shelf need supports, kept out of the moving clearances.</span>
+            <span v-if="params.retention === 'snap'"
+              >Snap parts print with the flexure plane parallel to the bed, so the plate, leaves and shelf need supports, kept out of the moving clearances.</span
+            >
             The grey rail is preview-only.
           </p>
         </div>
@@ -216,7 +202,9 @@
               <div class="flex flex-col gap-0.5">
                 <dt class="text-white/45">Clamp screw centres (x, y)</dt>
                 <dd class="text-[11px]">{{
-                  dimensions.clampScrewCenters.length ? dimensions.clampScrewCenters.map(([screwX, screwY]) => `(${screwX.toFixed(1)}, ${screwY.toFixed(1)})`).join(' ') : 'none (snap clip)'
+                  dimensions.clampScrewCenters.length
+                    ? dimensions.clampScrewCenters.map(([screwX, screwY]) => `(${screwX.toFixed(1)}, ${screwY.toFixed(1)})`).join(' ')
+                    : 'none (snap clip)'
                 }}</dd>
               </div>
 
@@ -240,6 +228,14 @@
                 <div class="flex justify-between gap-3">
                   <dt class="text-white/45">Release force estimate</dt>
                   <dd>{{ dimensions.snap.releaseForceEstimateN.map((value) => value.toFixed(2)).join(' to ') }} N</dd>
+                </div>
+                <div class="flex justify-between gap-3">
+                  <dt class="text-white/45">Rail room, per side</dt>
+                  <dd>{{ dimensions.snap.pocketClearance.toFixed(2) }} mm</dd>
+                </div>
+                <div class="flex justify-between gap-3">
+                  <dt class="text-white/45">Depth behind plate / rail reference</dt>
+                  <dd>{{ (-dimensions.snap.bearingBottom).toFixed(1) }} / {{ params.railHeight }} mm</dd>
                 </div>
               </template>
             </dl>
@@ -348,8 +344,20 @@
       open: true,
       fields: [
         { key: 'pattern', label: 'Hole pattern', options: PATTERN_OPTIONS },
-        { key: 'pitchX', label: 'Spacing X (centre to centre)', step: 0.5, slider: true, when: (parameters) => parameters.pattern === 'rectangle' || parameters.pattern === 'line-x' },
-        { key: 'pitchY', label: 'Spacing Y (centre to centre)', step: 0.5, slider: true, when: (parameters) => parameters.pattern === 'rectangle' || parameters.pattern === 'line-y' },
+        {
+          key: 'pitchX',
+          label: 'Spacing X (centre to centre)',
+          step: 0.5,
+          slider: true,
+          when: (parameters) => parameters.pattern === 'rectangle' || parameters.pattern === 'line-x',
+        },
+        {
+          key: 'pitchY',
+          label: 'Spacing Y (centre to centre)',
+          step: 0.5,
+          slider: true,
+          when: (parameters) => parameters.pattern === 'rectangle' || parameters.pattern === 'line-y',
+        },
         {
           key: 'holeDiameter',
           label: 'Hole diameter',
@@ -373,7 +381,13 @@
         { key: 'railWidth', label: 'Measured rail width', step: 0.05, hint: 'Measure with calipers.' },
         { key: 'railHeight', label: 'Rail reference depth', options: RAIL_HEIGHT_OPTIONS },
         { key: 'flangeThickness', label: 'Rail flange thickness', step: 0.05 },
-        { key: 'fitClearance', label: 'Fit clearance', step: 0.05, hint: 'Per rail side, and the total added flange-gap height.' },
+        {
+          key: 'fitClearance',
+          label: 'Fit clearance',
+          step: 0.05,
+          slider: true,
+          hint: 'Per rail side, and the total added flange-gap height. Raise it if a printed part has to be forced onto a real rail; the depth row below and the error list show what else it then needs.',
+        },
         { key: 'hookOverlap', label: 'Hook overlap', step: 0.1, hint: 'Capture inward from each nominal rail edge.' },
         { key: 'hookDepth', label: 'Hook / bar depth', step: 0.5, hint: 'Rearward depth below the plate underside.' },
       ],
@@ -395,9 +409,7 @@
             const minimum = snapGeometry
               ? Math.max(LIMITS.clipSpacing[0], Math.ceil(snapGeometry.wallEnd - snapGeometry.rootStart + 3))
               : Math.max(LIMITS.clipSpacing[0], parameters.clipWidth + 4);
-            const maximum = snapGeometry
-              ? Math.max(minimum, parameters.width - 2 * snapGeometry.wallEnd - 2)
-              : Math.max(minimum, parameters.width - parameters.clipWidth - 4);
+            const maximum = snapGeometry ? Math.max(minimum, parameters.width - 2 * snapGeometry.wallEnd - 2) : Math.max(minimum, parameters.width - parameters.clipWidth - 4);
             return { min: minimum, max: maximum };
           },
           hint: 'From the tightest legal station clearance to the widest that still fits inside the plate.',

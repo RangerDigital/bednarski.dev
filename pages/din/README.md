@@ -38,7 +38,7 @@ The main part contains a solid plate, optional integral standoffs, through bores
 
 The bar seats against the plate; the rail occupies a clearance pocket between the plate and the hooks. **Tightening the screws retains the bar, but does not clamp out rail sliding.** Add commercial DIN rail end stops as appropriate.
 
-The snap variant (`retention: 'snap'`) replaces the bar with an integral paired-leaf mechanism. One or two stations sit beside the rail: a common anchor carries two parallel leaves 5 mm apart that support a rigid jaw, so the jaw translates outward with little rotation. The jaw ends in an inward retaining tooth that captures the opposite flange, a 45 degree ramp on the head cams the jaw outward during installation, and a narrow pull tab beyond the plate's +Y edge releases it. A fixed side wall carries a bearing shelf that takes the downward jaw reaction into the plate, and an outward travel stop limits intended movement. No screws or nuts are generated in this mode. `dimensions.snap` reports the design name, those dimensions, `strain`, `maxStrain`, `stopTravel`, `screenedStrain` and `releaseForceEstimateN` (bracketed for 1200 and 2200 MPa modulus assumptions). The engine rejects a screened stop strain above 3 percent, a tab reach outside 4 to 35 mm, and any station that does not fit the plate with room for its rigid support. The bearing shelf hangs `snapClearance` plus its own thickness below the leaves, so the top of the allowed range needs a 15 mm rail reference or a reduced flange, overlap and fit clearance. Snap parts print translated in Z only, so the flexure plane stays parallel to the bed and the plate, leaves and shelf need supports, unlike the screw variant, which prints on its X edge.
+The snap variant (`retention: 'snap'`) replaces the bar with an integral paired-leaf mechanism. One or two stations sit beside the rail: a common anchor carries two parallel leaves about 5 mm apart that support a rigid jaw, so the jaw translates outward with little rotation. The jaw ends in an inward retaining tooth that captures the opposite flange, an insertion ramp on the head cams the jaw outward during installation, and a narrow pull tab beyond the plate's +Y edge releases it. A fixed side wall carries a bearing shelf that takes the downward jaw reaction into the plate, and an outward travel stop limits intended movement. No screws or nuts are generated in this mode. `dimensions.snap` reports the design name, those dimensions, `strain`, `maxStrain`, `stopTravel`, `screenedStrain`, `shelf`, `pocketClearance`, `rampAngleToInsertionDeg` and `releaseForceEstimateN` (bracketed for 1200 and 2200 MPa modulus assumptions). The engine rejects a screened stop strain above 3 percent, a tab reach outside 4 to 35 mm, and any station that does not fit the plate with room for its rigid support. The bearing shelf is the deepest feature, hanging `flangeThickness + fitClearance + leaf depth + snapClearance + shelf` behind the plate, so the engine also rejects any configuration whose load support would cross the rail reference plane. The UI reports that assembled depth next to the rail reference, and the engine rejects any configuration that does not fit, so a rail that needs more room is a parameter change rather than a redesign. Snap parts print translated in Z only, so the flexure plane stays parallel to the bed and the plate, leaves and shelf need supports, unlike the screw variant, which prints on its X edge.
 
 Lightening (`lightening: true`) cuts the plate through with rounded slots, saving roughly a third of the plate material. A solid border is kept at the plate edge, and material is kept around every bore and standoff, the hook and retaining-bar footprints, the clamp screw seats, and the snap anchor, side wall and travel stop. Slots run along the rail axis, so the suggested print orientations build them either as vertical channels that open onto both plate faces (main body standing on its X edge) or as plain through-holes (snap parts flat on the bed). Neither orientation has to bridge across a slot. The layout is derived, not stored: the free runs between the keep-out zones are split into slots of at most 22 mm with `ribWidth` of material left between them, so the pattern follows whatever plate, holes and clips you configure. `dimensions.lightening` reports the slot count and the removed volume.
 
@@ -58,33 +58,35 @@ Mounting bores for the electronics are **plain clearance holes**, not tapped hol
 
 All dimensions are **millimetres**. X runs along the rail, Y across its 35 mm width, and +Z points toward the electronics. The plate is centered at X=Y=0. Its underside is Z=0; the plate top is `plateThickness`. A standoff's height is measured above the plate. STL carries no unit metadata: import as millimetres.
 
-| Parameter                        | Purpose                                                          |     Default |
-| -------------------------------- | ---------------------------------------------------------------- | ----------: |
-| `width`, `height`                | Plate size along X and Y                                         |      90, 66 |
-| `plateThickness`, `cornerRadius` | Solid plate and outside corner radius                            |        4, 3 |
-| `lightening`, `slotWidth`, `ribWidth` | Through-slot plate lightening, open width and kept rib width |  false, 4, 2 |
-| `pattern`                        | `rectangle`, `line-x`, `line-y`, or `custom`                     | `rectangle` |
-| `pitchX`, `pitchY`               | Center-to-center hole separation, in 0.5 mm steps from 0.5       |      70, 44 |
-| `holeDiameter`                   | Finished design diameter of mounting bore                        |         3.4 |
-| `standoffHeight`                 | Height above plate; zero disables boss                           |           6 |
-| `standoffWall`                   | Radial material around each bore/slot                            |           2 |
-| `holes`                          | Arbitrary hole objects in custom mode; maximum 32                |        `[]` |
-| `railWidth`                      | Measured rail width; allowed 34–36, intended TH35                |          35 |
-| `railHeight`                     | Reference rail depth, 7.5 or 15; does not change lip capture     |         7.5 |
-| `flangeThickness`                | Measured rail-lip thickness                                      |           1 |
-| `fitClearance`                   | Clearance on each rail side and total added flange-gap height    |         0.3 |
-| `hookOverlap`                    | Capture inward from each nominal rail edge                       |           2 |
-| `hookDepth`                      | Total rearward hook/bar depth                                    |           6 |
-| `clipCount`                      | One or two hook/bar stations                                     |           1 |
-| `clipWidth`                      | Width of each station along rail                                 |          26 |
-| `clipSpacing`                    | Center spacing along X for two stations                          |          50 |
-| `clampHoleDiameter`              | Through bore for M3 clamp screws                                 |         3.4 |
-| `retention`                      | `screw` (retaining bar) or `snap` (integral paired-leaf clip)    |     `screw` |
-| `snapBladeThickness` | Snap mode: thickness of each paired leaf, allowed 0.8–1.6 | 1.2 |
-| `snapFreeLength` | Snap mode: straight leaf length between the end fillets, allowed 24–40 | 28 |
-| `snapClearance` | Snap mode: gap to the bearing shelf, allowed 0.3–0.6 | 0.4 |
-| `nutAcrossFlats`, `nutDepth`     | M3 hex-pocket fit                                                |    5.8, 2.6 |
-| `segments`                       | Cylinder facets, integer 32–128                                  |          64 |
+| Parameter                             | Purpose                                                                |     Default |
+| ------------------------------------- | ---------------------------------------------------------------------- | ----------: |
+| `width`, `height`                     | Plate size along X and Y                                               |      90, 66 |
+| `plateThickness`, `cornerRadius`      | Solid plate and outside corner radius                                  |        4, 3 |
+| `lightening`, `slotWidth`, `ribWidth` | Through-slot plate lightening, open width and kept rib width           | false, 4, 2 |
+| `pattern`                             | `rectangle`, `line-x`, `line-y`, or `custom`                           | `rectangle` |
+| `pitchX`, `pitchY`                    | Center-to-center hole separation, in 0.5 mm steps from 0.5             |      70, 44 |
+| `holeDiameter`                        | Finished design diameter of mounting bore                              |         3.4 |
+| `standoffHeight`                      | Height above plate; zero disables boss                                 |           6 |
+| `standoffWall`                        | Radial material around each bore/slot                                  |           2 |
+| `holes`                               | Arbitrary hole objects in custom mode; maximum 32                      |        `[]` |
+| `railWidth`                           | Measured rail width; allowed 34–36, intended TH35                      |          35 |
+| `railHeight`                          | Reference rail depth, 7.5 or 15; does not change lip capture           |         7.5 |
+| `flangeThickness`                     | Measured rail-lip thickness                                            |           1 |
+| `fitClearance`                        | Clearance on each rail side and total added flange-gap height          |         0.3 |
+
+The snap variant adds 0.25 mm of pocket room per side on top of `fitClearance`, taken on the two faces the rail actually touches: the inner leaf face and the fixed hook. It is clearance only — `travel`, the travel stop, the tab, capture depth, strain and release force are unchanged, and the leaf pair simply ends up that much closer together. Without it, a rail that measures wider than the value entered as `railWidth` (paint, zinc, rolling tolerance) wedges the jaw and drives the leaves past their designed travel, which cracks them. `dimensions.snap.pocketClearance` reports the total room per side. If a printed part still has to be forced onto a real rail, raise `fitClearance` (the strain screen still bounds it) and raise `height` when the outboard travel stop no longer has 0.5 mm of plate above it.
+| `hookOverlap`                         | Capture inward from each nominal rail edge                             |           2 |
+| `hookDepth`                           | Total rearward hook/bar depth                                          |           6 |
+| `clipCount`                           | One or two hook/bar stations                                           |           1 |
+| `clipWidth`                           | Width of each station along rail                                       |          26 |
+| `clipSpacing`                         | Center spacing along X for two stations                                |          50 |
+| `clampHoleDiameter`                   | Through bore for M3 clamp screws                                       |         3.4 |
+| `retention`                           | `screw` (retaining bar) or `snap` (integral paired-leaf clip)          |     `screw` |
+| `snapBladeThickness`                  | Snap mode: thickness of each paired leaf, allowed 0.8–1.6              |         1.2 |
+| `snapFreeLength`                      | Snap mode: straight leaf length between the end fillets, allowed 24–40 |          28 |
+| `snapClearance`                       | Snap mode: gap to the bearing shelf, allowed 0.3–0.6                   |         0.4 |
+| `nutAcrossFlats`, `nutDepth`          | M3 hex-pocket fit                                                      |    5.8, 2.6 |
+| `segments`                            | Cylinder facets, integer 32–128                                        |          64 |
 
 The nominal flange pocket is `flangeThickness + fitClearance`. The illustrative rail is centered in this vertical clearance; each rail side has `fitClearance` lateral room. The hook overlap is measured from nominal rail edges, not from the outside of the clearance gap. `holeDiameter` and nut-pocket dimensions are actual modeled sizes, with no hidden printer compensation. Circular holes are polygonal approximations; at 64 facets a 3.4 mm bore has about 0.004 mm less inscribed diameter.
 

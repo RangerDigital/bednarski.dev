@@ -95,7 +95,7 @@ test('load shelf and travel stop are separate at rest and arrest the intended he
  try{
   const head=k(m.intersect(box(d.headStart+0.03,d.bladeInner-2.5,-r.dimensions.flangeGap-d.depth+0.01,d.headLength-0.06,d.headOuter-d.bladeInner+2.51,d.depth-0.02)));
   const stop=k(m.intersect(box(d.stopStartX,d.stopY,-r.dimensions.flangeGap-d.depth,d.wallEnd-d.stopStartX,d.stopOuter-d.stopY,r.dimensions.flangeGap+d.depth)));
-  const shelf=k(m.intersect(box(d.headStart-0.5,d.bladeInner+0.1,d.bearingBottom,d.wallEnd-d.headStart+0.5,d.headOuter+d.stopTravel+0.5-d.bladeInner-0.1,1.6)));
+  const shelf=k(m.intersect(box(d.headStart-0.5,d.bladeInner+0.1,d.bearingBottom,d.wallEnd-d.headStart+0.5,d.headOuter+d.stopTravel+0.5-d.bladeInner-0.1,d.shelf)));
   assert.ok(head.volume()>0&&stop.volume()>0&&shelf.volume()>0);
   assert.ok(k(head.intersect(stop)).volume()<1e-6);assert.ok(k(head.intersect(shelf)).volume()<1e-6);
   assert.ok(k(k(head.translate([0,d.travel,0])).intersect(stop)).volume()<1e-6);
