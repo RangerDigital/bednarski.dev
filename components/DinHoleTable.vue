@@ -25,6 +25,7 @@
           <span class="text-[10px] uppercase tracking-wider text-white/35">X mm</span>
           <input
             type="number"
+            step="0.5"
             :aria-label="`Hole ${index + 1} X`"
             :value="hole.x ?? ''"
             class="w-full rounded border border-dark-lighter bg-dark px-2 py-1.5 text-xs text-white focus:border-primary focus:outline-none"
@@ -36,6 +37,7 @@
           <span class="text-[10px] uppercase tracking-wider text-white/35">Y mm</span>
           <input
             type="number"
+            step="0.5"
             :aria-label="`Hole ${index + 1} Y`"
             :value="hole.y ?? ''"
             class="w-full rounded border border-dark-lighter bg-dark px-2 py-1.5 text-xs text-white focus:border-primary focus:outline-none"

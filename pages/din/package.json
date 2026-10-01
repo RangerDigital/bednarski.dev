@@ -6,7 +6,7 @@
   "main": "core.mjs",
   "exports": "./core.mjs",
   "scripts": {
-    "test": "node --test test/core.test.mjs test/snap.test.mjs"
+    "test": "node --test test/core.test.mjs test/integral.test.mjs"
   },
   "license": "MIT",
   "type": "module",

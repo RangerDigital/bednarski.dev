@@ -24,7 +24,7 @@
       required: true,
     },
     modelValue: {
-      type: [String, Number],
+      type: [String, Number, Boolean],
       default: undefined,
     },
     min: {

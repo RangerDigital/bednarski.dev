@@ -12,7 +12,7 @@ export const DEFAULTS = Object.freeze({
   clipWidth: 26, clipCount: 1, clipSpacing: 50,
   clampHoleDiameter: 3.4, nutAcrossFlats: 5.8, nutDepth: 2.6,
   segments: 64,
-  retention: 'screw', snapBladeThickness: 1.2, snapFreeLength: 22,
+  retention: 'screw', snapBladeThickness: 1.2, snapFreeLength: 28, snapClearance: 0.4,
 });
 export const PRESETS = Object.freeze({
   pcb4: { ...DEFAULTS },
@@ -24,11 +24,19 @@ export const PRESETS = Object.freeze({
   ] },
   fitCoupon: { ...DEFAULTS, width: 36, height: 62, pattern: 'custom', holes: [], standoffHeight: 0 },
 });
+
+/** Snap examples: the screw presets with snap retention, plus a wider coupon for the paired flexure. */
+export const SNAP_PRESETS = Object.freeze({
+  pcb4: { ...PRESETS.pcb4, retention: 'snap' },
+  psu2: { ...PRESETS.psu2, retention: 'snap' },
+  yline50: { ...PRESETS.pcb4, retention: 'snap', pattern: 'line-y', pitchY: 50 },
+  fitCoupon: { ...PRESETS.fitCoupon, retention: 'snap', width: 48, height: 66 },
+});
 export const LIMITS = Object.freeze({
-  snapBladeThickness:[0.8,2], snapFreeLength:[18,36],
+  snapBladeThickness:[0.8,1.6], snapFreeLength:[24,40], snapClearance:[0.3,0.6],
   width:[32,300], height:[62,300], plateThickness:[3,12], cornerRadius:[0,12],
   slotWidth:[2.5,8], ribWidth:[1.2,4],
-  pitchX:[1,280], pitchY:[1,280], holeDiameter:[2,8], standoffHeight:[0,30],
+  pitchX:[0.5,280], pitchY:[0.5,280], holeDiameter:[2,8], standoffHeight:[0,30],
   standoffWall:[1.5,6], railWidth:[34,36], railHeight:[7.5,15],
   flangeThickness:[0.8,2], fitClearance:[0.1,0.8], hookOverlap:[1,3],
   hookDepth:[5,10], clipWidth:[24,50], clipSpacing:[26,250],
@@ -109,11 +117,20 @@ export function lighteningSlots(configuration) {
     reserve(minX, railHalfWidth - ribWidth, maxX, barOuterY + ribWidth);
     // The fixed hook only ever sits on the negative Y side.
     reserve(minX, -hookOuterY - ribWidth, maxX, -railHalfWidth + ribWidth);
-    // Snap: keep the head and release tab clear so the plate still backs the moving part.
+    // Snap: only the anchor and the rigid wall / travel stop reach the plate, so keep those solid.
     if (isSnap && snapGeometry) {
       reserve(
         stationCenterX + snapGeometry.rootStart - ribWidth, railHalfWidth - ribWidth,
-        stationCenterX + snapGeometry.rootStart + snapGeometry.span + ribWidth, height / 2,
+        stationCenterX + snapGeometry.anchorEnd + ribWidth,
+        snapGeometry.outerBladeInner + snapGeometry.thickness + snapGeometry.radius + ribWidth,
+      );
+      reserve(
+        stationCenterX + snapGeometry.wallStart - ribWidth, railHalfWidth - ribWidth,
+        stationCenterX + snapGeometry.wallEnd + ribWidth, snapGeometry.stopOuter + ribWidth,
+      );
+      reserve(
+        stationCenterX + snapGeometry.stopStartX - ribWidth, snapGeometry.stopY - ribWidth,
+        stationCenterX + snapGeometry.wallEnd + ribWidth, snapGeometry.stopOuter + ribWidth,
       );
     }
   }
@@ -220,49 +237,95 @@ export function normalizeParameters(input = {}) {
     const rootRadius = Math.max(1.2, bladeThickness);
     const anchorLength = 4;
     const headLength = 4;
+    const leafSpacing = 5;
     const bladeInnerY = railHalfWidth + parameters.fitClearance;
+    const outerBladeInnerY = bladeInnerY + leafSpacing;
     const travel = parameters.hookOverlap + parameters.fitClearance;
-    // Fixed 45 degree insertion ramp; the beam flexes in XY, bending toward +Y.
+    const stopTravel = travel + parameters.snapClearance;
+    // Fixed 45 degree insertion ramp; the paired leaves flex in XY, bending toward +Y.
     const rampHeight = travel;
     const bladeDepth = Math.max(4, rampHeight + 0.4);
-    const span = anchorLength + rootRadius + freeLength + headLength;
+    const span = anchorLength + 2 * rootRadius + freeLength + headLength;
     const rootStart = -span / 2;
     const anchorEnd = rootStart + anchorLength;
     const freeStart = anchorEnd + rootRadius;
-    const headStart = freeStart + freeLength;
+    const freeEnd = freeStart + freeLength;
+    const headStart = freeEnd + rootRadius;
+    const headEnd = headStart + headLength;
     const releaseOuterY = parameters.height / 2 + 4; // reachable beyond the +Y plate edge
-    const tabReach = releaseOuterY - bladeInnerY - bladeThickness;
-    const strain = (1.5 * bladeThickness * travel) / (freeLength * freeLength);
+    const headOuterY = outerBladeInnerY + bladeThickness;
+    const tabReach = releaseOuterY - headOuterY;
+    const tabWidth = headLength - 1.8;
+    const wallStart = headEnd + 0.8;
+    const wallEnd = wallStart + 2.4;
+    const stopStartX = headEnd - 1.2;
+    const stopY = headOuterY + stopTravel;
+    const stopOuterY = stopY + 2.4;
+    // Bearing shelf sits one clearance below the jaw and is carried by the side wall.
+    const bearingTopZ = -flangeGap - bladeDepth - parameters.snapClearance;
+    const bearingBottomZ = bearingTopZ - 1.6;
+    // Two approximately fixed-guided leaves, not one free-ended cantilever.
+    const strain = (3 * bladeThickness * travel) / (freeLength * freeLength);
+    const maxStrain = (3 * bladeThickness * stopTravel) / (freeLength * freeLength);
     // Conservative screening allowance, not a proven FDM stress concentration factor.
-    const screenedStrain = 2 * strain;
-    const slope = (1.5 * travel) / freeLength;
-    const sweptXAllowance = tabReach * Math.sin(Math.atan(slope)) + 1;
+    const screenedStrain = 2 * maxStrain;
 
-    if (screenedStrain > 0.03) errors.push('Snap strain screen exceeds 3%; increase snapFreeLength or reduce snapBladeThickness / hookOverlap.');
-    if (tabReach > 35) errors.push('Snap release tab would reach over 35 mm; reduce plate height (or redesign release access).');
-    if (stationCenters.some((centerX) => Math.abs(centerX) + span / 2 + 1 > parameters.width / 2)) {
-      errors.push('Snap flexure extends beyond plate X edges; increase width or reduce snapFreeLength / clipSpacing.');
+    if (screenedStrain > 0.03) errors.push('Snap strain screen at the travel stop exceeds 3%; increase snapFreeLength or reduce snapBladeThickness / hookOverlap.');
+    if (tabReach > 35 || tabReach < 4) errors.push('Snap release tab reach must be 4 to 35 mm; adjust plate height.');
+    if (stationCenters.some((centerX) => centerX + wallEnd + 1 > parameters.width / 2 || centerX + rootStart - 1 < -parameters.width / 2)) {
+      errors.push('Insufficient plate width for the paired flexure and its rigid support.');
     }
-    if (parameters.clipCount === 2 && parameters.clipSpacing < span + sweptXAllowance + 1) {
-      errors.push('Snap stations lack clearance for the moving release tabs; increase clipSpacing.');
+    if (parameters.clipCount === 2 && parameters.clipSpacing < wallEnd - rootStart + 3) {
+      errors.push('Increase clipSpacing to clear the paired flexure supports.');
     }
-    if (bladeInnerY + bladeThickness + rootRadius + 1 > parameters.height / 2 - parameters.cornerRadius) {
-      errors.push('Insufficient plate support above snap root; increase height or reduce cornerRadius.');
+    if (stopOuterY + 0.5 > parameters.height / 2 - parameters.cornerRadius) {
+      errors.push('Insufficient plate above the travel stop; increase height or reduce cornerRadius.');
     }
-    if (flangeGap + bladeDepth > parameters.railHeight + parameters.fitClearance / 2 - 0.2) {
-      errors.push('Snap blade extends behind the schematic rail mounting plane; use deeper rail or reduce flange / overlap / clearance.');
+    if (-bearingBottomZ > parameters.railHeight + parameters.fitClearance / 2 - 0.2) {
+      errors.push('Load support crosses the schematic rail mounting plane; use a 15 mm rail or reduce flange / overlap / clearance.');
     }
 
-    // Simplified beam load at the free end; a head-end force has a longer lever arm.
-    const releaseForceAt = (modulusMPa) => (modulusMPa * bladeDepth * bladeThickness ** 3 * travel) / (4 * freeLength ** 3);
+    // Paired fixed-guided beam model: two leaves sharing one rigid jaw.
+    const releaseForceAt = (modulusMPa) => (2 * modulusMPa * bladeDepth * bladeThickness ** 3 * travel) / freeLength ** 3;
     snapGeometry = {
-      thickness: bladeThickness, length: freeLength, radius: rootRadius, anchorLength, headLength,
-      bladeInner: bladeInnerY, travel, rampHeight, depth: bladeDepth, span, rootStart, anchorEnd,
-      freeStart, headStart, releaseOuter: releaseOuterY, tabReach, strain, screenedStrain, sweptXAllowance,
+      design: 'paired-leaf-with-load-support',
+      thickness: bladeThickness,
+      length: freeLength,
+      radius: rootRadius,
+      anchorLength,
+      headLength,
+      spacing: leafSpacing,
+      bladeInner: bladeInnerY,
+      outerBladeInner: outerBladeInnerY,
+      headOuter: headOuterY,
+      travel,
+      stopTravel,
+      rampHeight,
+      depth: bladeDepth,
+      span,
+      rootStart,
+      anchorEnd,
+      freeStart,
+      freeEnd,
+      headStart,
+      headEnd,
+      releaseOuter: releaseOuterY,
+      tabReach,
+      tabWidth,
+      wallStart,
+      wallEnd,
+      stopStartX,
+      stopY,
+      stopOuter: stopOuterY,
+      bearingTop: bearingTopZ,
+      bearingBottom: bearingBottomZ,
+      strain,
+      maxStrain,
+      screenedStrain,
       releaseForceEstimateN: [releaseForceAt(1200), releaseForceAt(2200)],
       modulusAssumptionMPa: [1200, 2200],
       rampAngleToInsertionDeg: 45,
-      printZShift: Math.max(parameters.hookDepth, flangeGap + bladeDepth),
+      printZShift: Math.max(parameters.hookDepth, -bearingBottomZ),
     };
   }
   if (parameters.hookDepth - flangeGap < 2.5) errors.push('hookDepth must leave at least 2.5 mm below the rail flange gap.');
@@ -318,10 +381,14 @@ export function normalizeParameters(input = {}) {
     if (isSnap && snapGeometry) {
       for (const centerX of stationCenters) {
         // Only the anchor reaches the plate; do not reserve a fictitious full-width jaw.
-        if (maxX > centerX + snapGeometry.rootStart && minX < centerX + snapGeometry.anchorEnd
-          && maxY > snapGeometry.bladeInner && minY < snapGeometry.bladeInner + snapGeometry.thickness + snapGeometry.radius) {
-          errors.push(`Hole ${index + 1}: too close to the snap anchor. Move hole or clip.`);
-        }
+        const hitsAnchor = maxX > centerX + snapGeometry.rootStart && minX < centerX + snapGeometry.anchorEnd
+          && maxY > snapGeometry.bladeInner && minY < snapGeometry.outerBladeInner + snapGeometry.thickness + snapGeometry.radius;
+        const hitsSupport = (maxX > centerX + snapGeometry.wallStart && minX < centerX + snapGeometry.wallEnd
+          && maxY > snapGeometry.bladeInner && minY < snapGeometry.stopOuter)
+          || (maxX > centerX + snapGeometry.stopStartX && minX < centerX + snapGeometry.wallEnd
+            && maxY > snapGeometry.stopY && minY < snapGeometry.stopOuter);
+        if (hitsAnchor) errors.push(`Hole ${index + 1}: too close to the snap anchor. Move hole or clip.`);
+        if (hitsSupport) errors.push(`Hole ${index + 1}: too close to the rigid snap support or travel stop.`);
       }
     }
 
@@ -329,8 +396,9 @@ export function normalizeParameters(input = {}) {
       const previousHole = holes[previousIndex];
       const [previousStart, previousEnd] = holeSegment(previousHole);
       const previousFootprintRadius = previousHole.diameter / 2 + (previousHole.standoffHeight > 0 ? parameters.standoffWall : 0);
-      if (segmentDistance(start, end, previousStart, previousEnd) < footprintRadius + previousFootprintRadius + 1) {
-        errors.push(`Holes ${previousIndex + 1} and ${index + 1}: insufficient separation.`);
+      const minimumSeparation = footprintRadius + previousFootprintRadius + 1;
+      if (segmentDistance(start, end, previousStart, previousEnd) < minimumSeparation) {
+        errors.push(`Holes ${previousIndex + 1} and ${index + 1}: need at least ${minimumSeparation.toFixed(1)} mm between their footprints; move them apart or reduce the hole diameter / standoff wall.`);
       }
     }
   });
@@ -405,36 +473,53 @@ export async function createGenerator(wasmOptions = {}) {
       return retain(retain(new CrossSection([outline])).extrude(plateThickness));
     };
 
-    /** One integral snap station: root block, blade fillets, retaining tooth and release ledge. */
+    /**
+     * One integral snap station: a common anchor carrying two paired leaves and the rigid jaw,
+     * plus the retaining tooth, pull tab, fixed side wall, bearing shelf and outward travel stop.
+     */
     const appendSnapStation = (shapeList, stationCenterX) => {
       const {
-        rootStart, anchorLength, anchorEnd, freeStart, headStart, bladeInner,
-        thickness, radius, depth, rampHeight, releaseOuter, length: freeLength, headLength,
+        rootStart, anchorEnd, anchorLength, freeStart, headStart, headLength,
+        bladeInner, outerBladeInner, headOuter, thickness, radius, depth, spacing,
+        rampHeight, tabWidth, releaseOuter, wallStart, wallEnd, stopStartX, stopY,
+        stopOuter, stopTravel, bearingTop, bearingBottom, length: freeLength,
       } = snapGeometry;
       const baseZ = -flangeGap - depth;
+      const atStation = (outline) => outline.map(([pointX, pointY]) => [stationCenterX + pointX, pointY]);
 
-      // Only the root block reaches the plate; the small positive overlap below is intentional.
-      shapeList.push(box(stationCenterX + rootStart, bladeInner, baseZ, anchorLength, thickness + radius, depth + flangeGap + 0.02));
+      // Common fixed anchor; leaves, jaw and moving head are all printed integrally.
+      shapeList.push(box(stationCenterX + rootStart, bladeInner, baseZ, anchorLength, spacing + thickness + radius, depth + flangeGap + 0.02));
       // Wider root shoulder below flange level, carrying both XY root fillets.
-      shapeList.push(box(stationCenterX + rootStart, bladeInner - radius, baseZ, anchorLength + 0.02, thickness + 2 * radius, depth));
-      shapeList.push(box(stationCenterX + anchorEnd - 0.02, bladeInner, baseZ, radius + freeLength + headLength + 0.02, thickness, depth));
+      shapeList.push(box(stationCenterX + rootStart, bladeInner - radius, baseZ, anchorLength + 0.02, spacing + thickness + 2 * radius, depth));
 
-      for (const side of [-1, 1]) {
-        const bladeEdgeY = side < 0 ? bladeInner : bladeInner + thickness;
-        const filletCenterY = bladeEdgeY + side * radius;
-        const outline = [
-          [stationCenterX + anchorEnd - 0.02, bladeEdgeY - side * 0.02],
-          [stationCenterX + anchorEnd - 0.02, filletCenterY],
-        ];
-        for (let step = 1; step <= 16; step += 1) {
-          const angle = ((180 + (side < 0 ? -1 : 1) * ((90 * step) / 16)) * Math.PI) / 180;
-          outline.push([stationCenterX + freeStart + radius * Math.cos(angle), filletCenterY + radius * Math.sin(angle)]);
+      for (const leafInnerY of [bladeInner, outerBladeInner]) {
+        shapeList.push(box(stationCenterX + anchorEnd - 0.02, leafInnerY, baseZ, 2 * radius + freeLength + headLength + 0.02, thickness, depth));
+        for (const side of [-1, 1]) {
+          for (const end of ['root', 'head']) {
+            const bladeEdgeY = side < 0 ? leafInnerY : leafInnerY + thickness;
+            const filletCenterY = bladeEdgeY + side * radius;
+            let outline = [
+              [anchorEnd - 0.02, bladeEdgeY - side * 0.02],
+              [anchorEnd - 0.02, filletCenterY],
+            ];
+            for (let step = 1; step <= 16; step += 1) {
+              const angle = ((180 + (side < 0 ? -1 : 1) * ((90 * step) / 16)) * Math.PI) / 180;
+              outline.push([freeStart + radius * Math.cos(angle), filletCenterY + radius * Math.sin(angle)]);
+            }
+            // The last arc point is (freeStart, bladeEdgeY), closing onto the straight leaf edge.
+            outline.push([freeStart, bladeEdgeY - side * 0.02]);
+            if (side > 0) outline.reverse();
+            if (end === 'head') {
+              outline = outline.map(([pointX, pointY]) => [anchorEnd + headStart - pointX, pointY]);
+              outline.reverse();
+            }
+            shapeList.push(translated(retain(retain(new CrossSection([atStation(outline)])).extrude(depth)), [0, 0, baseZ]));
+          }
         }
-        // The last arc point is (freeStart, bladeEdgeY), closing onto the straight blade edge.
-        outline.push([stationCenterX + freeStart, bladeEdgeY - side * 0.02]);
-        if (side > 0) outline.reverse();
-        shapeList.push(translated(retain(retain(new CrossSection([outline])).extrude(depth)), [0, 0, baseZ]));
       }
+
+      // Rigid common jaw makes the two leaves act as a compliant parallelogram.
+      shapeList.push(box(stationCenterX + headStart - 0.02, bladeInner, baseZ, headLength + 0.02, spacing + thickness, depth));
 
       // Retaining tooth: a triangle in YZ extruded along +X, so the upper outer flange corner
       // rides the diagonal as the rail moves +Z relative to the mount.
@@ -445,9 +530,15 @@ export async function createGenerator(wasmOptions = {}) {
       ]]));
       shapeList.push(translated(retain(retain(toothSection.extrude(headLength)).rotate([90, 0, 90])), [stationCenterX + headStart, 0, 0]));
 
-      // The release ledge belongs to the free head, never to the fixed root: pulling it outward
-      // (+Y) bends the XY blade directly, with no deep return leg.
-      shapeList.push(box(stationCenterX + headStart, bladeInner + thickness - 0.02, -flangeGap - 2, headLength, releaseOuter - bladeInner - thickness + 0.02, 2));
+      // Narrower pull tab bypasses the outboard stop in X.
+      shapeList.push(box(stationCenterX + headStart, headOuter - 0.02, -flangeGap - 2, tabWidth, releaseOuter - headOuter + 0.02, 2));
+
+      // Fixed side wall and bearing shelf carry the downward jaw reaction into the plate.
+      shapeList.push(box(stationCenterX + wallStart, bladeInner, bearingBottom, wallEnd - wallStart, stopOuter - bladeInner, -bearingBottom + 0.02));
+      shapeList.push(box(stationCenterX + headStart - 0.5, bladeInner + 0.1, bearingBottom, wallEnd - headStart + 0.5, headOuter + stopTravel + 0.5 - bladeInner - 0.1, bearingTop - bearingBottom));
+
+      // Outward travel stop, tied to both the plate and the side wall.
+      shapeList.push(box(stationCenterX + stopStartX, stopY, baseZ, wallEnd - stopStartX, stopOuter - stopY, -baseZ + 0.02));
     };
 
     /** Suggested print orientation, with the lowest feature on the bed (STL z >= 0). */
@@ -508,16 +599,26 @@ export async function createGenerator(wasmOptions = {}) {
 
       let mainBody = cutSolids.length === 0 ? union(mainBodySolids) : subtract(union(mainBodySolids), cutSolids);
       if (isSnap) {
-        // Re-importing through Float32 and cleaning up keeps sub-micron CSG slivers out of the STL.
-        const mesh = mainBody.getMesh();
+        // Re-importing through Float32, then simplifying, keeps sub-micron CSG slivers out of the STL.
+        const rawMesh = mainBody.getMesh();
         const rounded = retain(new Manifold({
-          numProp: mesh.numProp,
-          vertProperties: Float32Array.from(mesh.vertProperties),
-          triVerts: mesh.triVerts,
-          mergeFromVert: mesh.mergeFromVert,
-          mergeToVert: mesh.mergeToVert,
+          numProp: rawMesh.numProp,
+          vertProperties: Float32Array.from(rawMesh.vertProperties),
+          triVerts: rawMesh.triVerts,
+          mergeFromVert: rawMesh.mergeFromVert,
+          mergeToVert: rawMesh.mergeToVert,
         }));
         mainBody = retain(retain(rounded.asOriginal()).setTolerance(0.0001));
+
+        const tighterMesh = mainBody.getMesh();
+        const simplified = retain(new Manifold({
+          numProp: tighterMesh.numProp,
+          vertProperties: Float32Array.from(tighterMesh.vertProperties),
+          triVerts: tighterMesh.triVerts,
+          mergeFromVert: tighterMesh.mergeFromVert,
+          mergeToVert: tighterMesh.mergeToVert,
+        }));
+        mainBody = retain(retain(simplified.asOriginal()).simplify(0.001));
       }
 
       const parts = [packSolid('main', mainBody, 1)];
@@ -570,8 +671,8 @@ export async function createGenerator(wasmOptions = {}) {
       ];
       if (isSnap) {
         warnings.splice(1, 3,
-          'Snap prototype: beam runs along X, flexes +Y, and must stay in XY print layers. Suggested transform keeps Z up and puts the lowest feature on the bed; support the plate, beam, tab and ramp as needed. Remove support without fusing the flexure to the plate.',
-          'Pull the free-head tab outward (+Y), clear the +Y flange, then tilt off the fixed hook. Release each station. Stop once clear; there is no overtravel stop.',
+          'One-piece paired-leaf snap: print with the XY bending plane parallel to the bed, and keep support out of the moving clearances so the shelf gap cannot be welded shut.',
+          'Pull the tab in +Y until the flange clears, then tilt the mount off the fixed hook. The integral stop limits intended outward travel; do not pry past it or twist the tab.',
           'Snap is positive capture with clearance, not preload or an X-axis friction lock. Use rail end stops if needed. Fit, fatigue, PETG elasticity and load capacity require physical testing.',
           'Keep device screw tips/nuts and cables clear of the entire moving beam/tab envelope; hole validation checks the printed anchor, not hardware.');
       }

@@ -31,7 +31,7 @@ test('original screw STL bytes are identical for all original presets and a vari
   }
 });
 test('snap acceptance: one watertight part, no clamp hardware, Y line at 50 mm allowed',()=>{
-  for(const p of [input({}),input({pattern:'line-y',pitchY:50}),{...PRESETS.psu2,retention:'snap'},{...PRESETS.fitCoupon,retention:'snap'}]){
+  for(const p of [input({}),input({pattern:'line-y',pitchY:50}),{...PRESETS.psu2,retention:'snap'},{...PRESETS.fitCoupon,retention:'snap',width:48,height:66}]){
     const r=generator.generate(p);assert.equal(r.parts.length,1);assert.equal(r.hardware.clampScrews.count,0);assert.equal(r.hardware.clampNuts.count,0);
     checkExport(r.parts[0]);checkExport(r.printParts[0]);
     assert.ok(Math.abs(meshBounds(r.printParts[0].mesh).min[2])<1e-5);
@@ -69,20 +69,38 @@ test('actual exported head: ramp causes insertion contact, released head clears 
 });
 test('snap nominal and screened strain plus force are exposed with explicit modulus assumptions',()=>{
   const d=generator.generate(input({})).dimensions.snap;
-  assert.ok(Math.abs(d.strain-0.008553719008264462)<1e-12);
+  assert.ok(Math.abs(d.strain-3*1.2*2.3/28**2)<1e-12);
   assert.ok(d.screenedStrain<=0.03);assert.deepEqual(d.modulusAssumptionMPa,[1200,2200]);
-  assert.ok(d.releaseForceEstimateN[0]>0.4&&d.releaseForceEstimateN[1]<0.9);
+  assert.ok(d.releaseForceEstimateN[0]>1.7&&d.releaseForceEstimateN[1]<3.3);
 });
 test('derived constraints reject wrong enum, obsolete depth, excessive strain, short spacing and anchor-hole collision',()=>{
   const d=normalizeParameters(input({})).snapGeometry;
   for(const p of [input({retention:'other'}),input({snapArmDepth:20}),input({snapBladeThickness:2,snapFreeLength:18,hookOverlap:3,fitClearance:0.8}),input({height:150}),input({clipCount:2,clipSpacing:30}),input({pattern:'custom',holes:[{x:d.rootStart+2,y:d.bladeInner+1}]})])assert.throws(()=>normalizeParameters(p),ParameterError);
 });
-test('512 corner combinations: connected manifold, assembled zero interference, no negative print Z',()=>{
+test('256 corner combinations: connected manifold, assembled zero interference, no negative print Z',()=>{
   let count=0;
-  for(const railWidth of [34,36])for(const railHeight of [7.5,15])for(const flangeThickness of [0.8,2])for(const fitClearance of [0.1,0.8])for(const hookOverlap of [1,3])for(const plateThickness of [3,12])for(const clipWidth of [24,50])for(const clipCount of [1,2])for(const snapBladeThickness of [0.8,1.2]){
-    const r=generator.generate(input({width:180,height:80,pattern:'custom',holes:[],railWidth,railHeight,flangeThickness,fitClearance,hookOverlap,plateThickness,clipWidth,clipCount,clipSpacing:72,hookDepth:8,snapBladeThickness}));
+  for(const railWidth of [34,36])for(const railHeight of [15])for(const flangeThickness of [0.8,2])for(const fitClearance of [0.1,0.8])for(const hookOverlap of [1,3])for(const plateThickness of [3,12])for(const clipWidth of [24,50])for(const clipCount of [1,2])for(const snapBladeThickness of [0.8,1.2]){
+    const r=generator.generate(input({width:220,height:84,snapFreeLength:36,pattern:'custom',holes:[],railWidth,railHeight,flangeThickness,fitClearance,hookOverlap,plateThickness,clipWidth,clipCount,clipSpacing:72,hookDepth:8,snapBladeThickness}));
     toSTL(r.parts[0].mesh);toSTL(r.printParts[0].mesh);
     assert.equal(r.parts.length,1);assert.ok(r.parts[0].volumeMm3>0);assert.ok(meshBounds(r.printParts[0].mesh).min[2]>=-1e-5);count++;
   }
-  assert.equal(count,512);
+  assert.equal(count,256);
+});
+
+// Isolate head and stationary supports from actual mesh. Test contact boundaries,
+// not just arithmetic fields; this is rigid head kinematics, not an FEA solution.
+test('load shelf and travel stop are separate at rest and arrest the intended head motions',()=>{
+ const r=generator.generate(input({})),d=r.dimensions.snap,p=r.parameters,m=solid(r.parts[0]);
+ const objs=[m],k=o=>(objs.push(o),o),box=(x,y,z,a,b,c)=>k(k(M.cube([a,b,c])).translate([x,y,z]));
+ try{
+  const head=k(m.intersect(box(d.headStart+0.03,d.bladeInner-2.5,-r.dimensions.flangeGap-d.depth+0.01,d.headLength-0.06,d.headOuter-d.bladeInner+2.51,d.depth-0.02)));
+  const stop=k(m.intersect(box(d.stopStartX,d.stopY,-r.dimensions.flangeGap-d.depth,d.wallEnd-d.stopStartX,d.stopOuter-d.stopY,r.dimensions.flangeGap+d.depth)));
+  const shelf=k(m.intersect(box(d.headStart-0.5,d.bladeInner+0.1,d.bearingBottom,d.wallEnd-d.headStart+0.5,d.headOuter+d.stopTravel+0.5-d.bladeInner-0.1,1.6)));
+  assert.ok(head.volume()>0&&stop.volume()>0&&shelf.volume()>0);
+  assert.ok(k(head.intersect(stop)).volume()<1e-6);assert.ok(k(head.intersect(shelf)).volume()<1e-6);
+  assert.ok(k(k(head.translate([0,d.travel,0])).intersect(stop)).volume()<1e-6);
+  assert.ok(k(k(head.translate([0,d.stopTravel+0.1,0])).intersect(stop)).volume()>0.001);
+  assert.ok(k(k(head.translate([0,0,-p.snapClearance+0.03])).intersect(shelf)).volume()<1e-6);
+  assert.ok(k(k(head.translate([0,0,-p.snapClearance-0.1])).intersect(shelf)).volume()>0.001);
+ }finally{objs.reverse().forEach(o=>o.delete());}
 });

@@ -163,7 +163,7 @@
 
           <p class="text-[11px] leading-snug text-white/35">
             Separate STL per part, in the suggested print orientation, sitting on Z=0. Import as millimetres.
-            <span v-if="params.retention === 'snap'">Snap parts print with the plate raised, so supports are needed under the plate, beam and tab.</span>
+            <span v-if="params.retention === 'snap'">Snap parts print with the flexure plane parallel to the bed, so the plate, leaves and shelf need supports, kept out of the moving clearances.</span>
             The grey rail is preview-only.
           </p>
         </div>
@@ -222,7 +222,7 @@
 
               <template v-if="dimensions.snap">
                 <div class="flex justify-between gap-3">
-                  <dt class="text-white/45">Snap blade / free length</dt>
+                  <dt class="text-white/45">Snap leaf, thickness / free length</dt>
                   <dd>{{ dimensions.snap.thickness }} / {{ dimensions.snap.length }} mm</dd>
                 </div>
                 <div class="flex justify-between gap-3">
@@ -230,11 +230,11 @@
                   <dd>{{ dimensions.snap.span.toFixed(1) }} mm</dd>
                 </div>
                 <div class="flex justify-between gap-3">
-                  <dt class="text-white/45">Design travel</dt>
-                  <dd>{{ dimensions.snap.travel.toFixed(2) }} mm</dd>
+                  <dt class="text-white/45">Release travel / stop travel</dt>
+                  <dd>{{ dimensions.snap.travel.toFixed(2) }} / {{ dimensions.snap.stopTravel.toFixed(2) }} mm</dd>
                 </div>
                 <div class="flex justify-between gap-3">
-                  <dt class="text-white/45">Strain, nominal / screened</dt>
+                  <dt class="text-white/45">Strain, release / screened stop</dt>
                   <dd>{{ (dimensions.snap.strain * 100).toFixed(2) }} / {{ (dimensions.snap.screenedStrain * 100).toFixed(2) }} %</dd>
                 </div>
                 <div class="flex justify-between gap-3">
@@ -254,7 +254,7 @@
 
 <script setup>
   import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue';
-  import { LIMITS, PRESETS, normalizeParameters, toSTL } from './core.mjs';
+  import { LIMITS, PRESETS, SNAP_PRESETS, normalizeParameters, toSTL } from './core.mjs';
 
   useHead({
     title: 'DIN rail mount generator | Jakub Bednarski',
@@ -268,7 +268,7 @@
 
   const PRESET_LIST = [
     { id: 'pcb4', label: 'Four-hole PCB', file: 'pcb-mount' },
-    { id: 'snap50', label: 'Snap clip · Y-line 50 mm', file: 'snap-mount', params: { retention: 'snap', pattern: 'line-y', pitchY: 50 } },
+    { id: 'yline50', label: 'Snap clip · Y-line 50 mm', file: 'snap-mount', params: SNAP_PRESETS.yline50 },
     { id: 'psu2', label: 'Two-hole PSU (2 clips)', file: 'psu-mount' },
     { id: 'custom', label: 'Custom holes', file: 'custom-mount' },
     { id: 'fitCoupon', label: 'Rail fit coupon', file: 'rail-fit-coupon' },
@@ -392,24 +392,37 @@
           slider: true,
           when: (parameters) => parameters.clipCount === 2,
           bounds: (parameters, snapGeometry) => {
-            const min = Math.max(LIMITS.clipSpacing[0], parameters.clipWidth + 4, snapGeometry ? Math.ceil(snapGeometry.span + snapGeometry.sweptXAllowance + 1) : 0);
-            return { min, max: Math.max(min, parameters.width - parameters.clipWidth - 4) };
+            const minimum = snapGeometry
+              ? Math.max(LIMITS.clipSpacing[0], Math.ceil(snapGeometry.wallEnd - snapGeometry.rootStart + 3))
+              : Math.max(LIMITS.clipSpacing[0], parameters.clipWidth + 4);
+            const maximum = snapGeometry
+              ? Math.max(minimum, parameters.width - 2 * snapGeometry.wallEnd - 2)
+              : Math.max(minimum, parameters.width - parameters.clipWidth - 4);
+            return { min: minimum, max: maximum };
           },
           hint: 'From the tightest legal station clearance to the widest that still fits inside the plate.',
         },
         {
           key: 'snapBladeThickness',
-          label: 'Snap blade thickness (Y)',
-          step: 0.1,
+          label: 'Snap leaf thickness (Y)',
+          step: 0.05,
           when: (parameters) => parameters.retention === 'snap',
-          hint: '0.8–2 mm. A thicker beam is stiffer, so it strains more for the same deflection.',
+          hint: '0.8–1.6 mm. Thickness of each paired leaf in the bending direction.',
         },
         {
           key: 'snapFreeLength',
-          label: 'Snap free blade length (X)',
+          label: 'Snap leaf free length (X)',
           step: 1,
           when: (parameters) => parameters.retention === 'snap',
-          hint: '18–36 mm of free beam after the root fillet. Longer is softer. The snap span is derived from this, not from clip width.',
+          hint: '24–40 mm of straight leaf between the end fillets. Longer is softer.',
+        },
+        {
+          key: 'snapClearance',
+          label: 'Snap shelf clearance',
+          step: 0.05,
+          slider: true,
+          when: (parameters) => parameters.retention === 'snap',
+          hint: '0.3–0.6 mm gap below the jaw, and the extra outward travel before the stop. Above roughly 0.5 mm the shelf needs a 15 mm rail reference.',
         },
         { key: 'clampHoleDiameter', label: 'Clamp screw bore', step: 0.05, when: (parameters) => parameters.retention === 'screw' },
         { key: 'nutAcrossFlats', label: 'Nut across flats', step: 0.05, when: (parameters) => parameters.retention === 'screw', hint: 'Hex pocket fit.' },

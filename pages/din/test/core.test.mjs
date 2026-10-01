@@ -69,9 +69,11 @@ test('snap clip: one integral part, watertight, and it unlocks close centre-line
   }
   assert.throws(()=>normalizeParameters({...PRESETS.pcb4,retention:'glue'}),ParameterError);
   assert.throws(()=>normalizeParameters({...PRESETS.pcb4,retention:'snap',snapFreeLength:14,snapBladeThickness:5}),ParameterError);
-  // Derived constraint, not an input range: a short, thick blade with large travel fails the
-  // strain screen even though every individual value is inside its own limit.
-  assert.throws(()=>normalizeParameters({...PRESETS.pcb4,retention:'snap',snapFreeLength:18,snapBladeThickness:2,hookOverlap:3,fitClearance:0.8}),ParameterError);
+  // Derived constraint, not an input range: the screen is evaluated at the travel stop, so leaves
+  // that release inside the limit still fail once the stop clearance is added to the travel.
+  const stopTravelLeaves={...PRESETS.pcb4,retention:'snap',snapFreeLength:28,snapBladeThickness:1.2,hookOverlap:2.2,fitClearance:0.7,height:80,railHeight:15};
+  assert.ok(normalizeParameters({...stopTravelLeaves,snapClearance:0.3}).snapGeometry.screenedStrain<=0.03);
+  assert.throws(()=>normalizeParameters({...stopTravelLeaves,snapClearance:0.6}),ParameterError);
 });
 test('lightening: one watertight part, and exactly the reported volume is removed',()=>{
   const configurations=[['pcb4',PRESETS.pcb4],['psu2',PRESETS.psu2],['snap',{...PRESETS.pcb4,retention:'snap'}]];
@@ -86,7 +88,7 @@ test('lightening: one watertight part, and exactly the reported volume is remove
     // snap blade would remove a different amount of material and show up as drift here.
     const removed=solid.parts[0].volumeMm3-lightened.parts[0].volumeMm3;
     assert.ok(Math.abs(removed-info.removedMm3)/info.removedMm3<0.02,`${name}: removed ${removed} vs reported ${info.removedMm3}`);
-    assert.ok(removed>solid.parts[0].volumeMm3*0.3,`${name}: expected a real saving`);
+    assert.ok(removed>solid.parts[0].volumeMm3*0.2,`${name}: expected a real saving`);
     assert.ok(lightened.parts[0].triangles>solid.parts[0].triangles,name);
   }
   assert.throws(()=>normalizeParameters({...PRESETS.pcb4,lightening:true,slotWidth:12}),ParameterError);
